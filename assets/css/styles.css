@@ -1,0 +1,73 @@
+/* =========================================================================
+   FASTCHECK-IN & BI HOTELEIRO - ESTILOS ADICIONAIS & CUSTOMIZAÇÕES
+   ========================================================================= */
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f8fafc;
+}
+
+h1, h2, h3, .brand-font {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Smooth transitions */
+.fade-in {
+    animation: fadeIn 0.35s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Signature Pad styling */
+#signatureCanvas {
+    touch-action: none;
+    cursor: crosshair;
+}
+
+/* Legacy PMS Window Styling for Receptionist Quick-Copy Modal */
+.pms-legacy-box {
+    background-color: #ece9d8;
+    border: 2px outset #ffffff;
+    font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
+}
+
+.pms-legacy-header {
+    background: linear-gradient(90deg, #7a7666 0%, #9e9a89 100%);
+    color: #ffea00;
+    font-weight: bold;
+    padding: 3px 8px;
+    font-size: 13px;
+}
+
+.pms-legacy-input {
+    background-color: #ffffff;
+    border: 1px inset #7f9db9;
+    padding: 2px 6px;
+    font-size: 12px;
+    color: #000;
+    font-family: 'Tahoma', sans-serif;
+}
+
+@media print {
+    .no-print { display: none !important; }
+    .print-only { display: block !important; }
+}

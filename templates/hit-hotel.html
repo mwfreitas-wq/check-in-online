@@ -1,0 +1,2806 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastCheck-in & BI Hoteleiro | Hit Hotel â€¢ Porto Salvador â€¢ Porto das Ã‚ncoras</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts: Inter & Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js for Strategic Reports -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- QRious Library for Offline/Instant Canvas QR Code Generation (100% Google Sites Compatible) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        h1, h2, h3, .brand-font {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        /* Smooth transitions */
+        .fade-in {
+            animation: fadeIn 0.35s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Signature Pad styling */
+        #signatureCanvas {
+            touch-action: none;
+            cursor: crosshair;
+        }
+        /* Legacy PMS Window Styling for Receptionist Quick-Copy Modal */
+        .pms-legacy-box {
+            background-color: #ece9d8;
+            border: 2px outset #ffffff;
+            font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
+        }
+        .pms-legacy-header {
+            background: linear-gradient(90deg, #7a7666 0%, #9e9a89 100%);
+            color: #ffea00;
+            font-weight: bold;
+            padding: 3px 8px;
+            font-size: 13px;
+        }
+        .pms-legacy-input {
+            background-color: #ffffff;
+            border: 1px inset #7f9db9;
+            padding: 2px 6px;
+            font-size: 12px;
+            color: #000;
+            font-family: 'Tahoma', sans-serif;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- ========================================================================= -->
+    <!-- BARRA DE CONTROLE DA RECEPÃ‡ÃƒO & ADMIN                                      -->
+    <!-- (100% OCULTA POR PADRÃƒO - VISÃVEL APENAS APÃ“S DIGITAR A SENHA NA RECEPÃ‡ÃƒO) -->
+    <!-- ========================================================================= -->
+    <div id="top-admin-bar" class="hidden bg-slate-900 text-slate-200 text-xs py-2.5 px-4 border-b border-slate-700 no-print sticky top-0 z-50 shadow-md">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+            <!-- Simulador de SeleÃ§Ã£o do Hotel (VisÃ­vel apenas apÃ³s login da RecepÃ§Ã£o) -->
+            <div class="flex flex-wrap items-center gap-1.5">
+                <span class="text-amber-400 font-semibold flex items-center gap-1 mr-1">
+                    <i class="fa-solid fa-hotel"></i> Hotel Ativo:
+                </span>
+                <button onclick="switchHotel('hit')" id="sim-btn-hit" class="px-2.5 py-1 rounded-md font-medium transition flex items-center gap-1.5 bg-teal-600 text-white">
+                    <i class="fa-solid fa-umbrella-beach"></i> Hit Hotel
+                </button>
+                <button onclick="switchHotel('salvador')" id="sim-btn-salvador" class="px-2.5 py-1 rounded-md font-medium transition flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300">
+                    <i class="fa-solid fa-anchor"></i> Porto Salvador
+                </button>
+                <button onclick="switchHotel('ancoras')" id="sim-btn-ancoras" class="px-2.5 py-1 rounded-md font-medium transition flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300">
+                    <i class="fa-solid fa-water"></i> Porto das Ã‚ncoras
+                </button>
+                <button onclick="previewCleanGuestMode()" title="Ver exatamente como o hÃ³spede vÃª ao ler o QR Code (sem menus)" class="ml-1 px-2.5 py-1 rounded-md font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition flex items-center gap-1">
+                    <i class="fa-regular fa-eye"></i> Ver Como HÃ³spede
+                </button>
+            </div>
+
+            <!-- Alternador entre VisÃ£o do HÃ³spede e Ãrea Administrativa -->
+            <div class="flex items-center gap-2 ml-auto">
+                <button onclick="switchMainView('guest')" id="view-btn-guest" class="px-3 py-1.5 rounded-lg font-semibold bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-mobile-screen-button text-emerald-400"></i> FormulÃ¡rio Check-in
+                </button>
+                <button onclick="switchMainView('admin')" id="view-btn-admin" class="px-3 py-1.5 rounded-lg font-semibold bg-amber-400 text-slate-950 shadow-sm flex items-center gap-1.5 transition">
+                    <i id="admin-lock-icon" class="fa-solid fa-chart-pie text-slate-950"></i> Ãrea Administrativa & BI
+                    <span id="badge-total-checkins" class="ml-1 px-1.5 py-0.2 bg-slate-950 text-amber-400 rounded-full text-[10px] font-extrabold">14</span>
+                </button>
+                <button onclick="switchMainView('qrcodes')" id="view-btn-qrcodes" class="px-3 py-1.5 rounded-lg font-semibold bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-qrcode text-cyan-400"></i> Plaquinhas QR Code
+                </button>
+                <button onclick="lockAdminSession()" id="btn-logout-admin" class="px-2.5 py-1.5 rounded-lg font-semibold bg-rose-600 hover:bg-rose-700 text-white text-xs transition flex items-center gap-1" title="Sair e Bloquear Ãrea Administrativa">
+                    <i class="fa-solid fa-right-from-bracket"></i> Sair
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Banner flutuante exibido apenas quando o admin clica em "Testar VisÃ£o Limpa do HÃ³spede" -->
+    <div id="guest-preview-notice" class="hidden bg-indigo-950 text-indigo-100 text-xs py-1.5 px-4 text-center no-print border-b border-indigo-800">
+        <span><i class="fa-solid fa-circle-info text-indigo-400 mr-1"></i> <strong>Modo HÃ³spede Ativo:</strong> Todos os menus administrativos e seletores de hotel foram ocultados (exatamente como o hÃ³spede vÃª pelo QR Code).</span>
+        <button onclick="exitCleanGuestPreview()" class="ml-3 underline font-bold text-amber-300 hover:text-amber-200">Voltar ao Menu Principal</button>
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- VISÃƒO 1: EXPERIÃŠNCIA DO HÃ“SPEDE (CHECK-IN ONLINE)     -->
+    <!-- ===================================================== -->
+    <main id="guest-view" class="flex-grow pb-16">
+        <!-- Dynamic Hotel Hero Banner -->
+        <header id="hotel-hero" class="relative bg-gradient-to-br from-teal-700 via-teal-800 to-slate-900 text-white pt-6 pb-16 px-4 transition-all duration-500 shadow-lg">
+            <div class="max-w-3xl mx-auto">
+                <!-- Top Row: Hotel Brand & Language Selector -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/15 pb-5">
+                    <div class="flex items-center gap-3.5">
+                        <div id="hotel-icon-box" class="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center text-2xl shadow-inner border border-white/20">
+                            <i id="hotel-logo-icon" class="fa-solid fa-umbrella-beach text-teal-300"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span id="hotel-badge-tag" class="text-[11px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full bg-white/20 text-white">Check-in Digital Oficial</span>
+                            </div>
+                            <h1 id="hotel-title" class="text-2xl sm:text-3xl font-extrabold tracking-tight mt-0.5">Hit Hotel</h1>
+                            <p id="hotel-subtitle" class="text-xs sm:text-sm text-white/80 flex items-center gap-1.5">
+                                <i class="fa-solid fa-location-dot"></i> <span id="hotel-location-text">Salvador - Bahia, Brasil</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Language Switcher (PT, ES, EN, FR) -->
+                    <div class="bg-black/25 backdrop-blur-md p-1.5 rounded-xl border border-white/15 self-start sm:self-auto">
+                        <div class="text-[10px] uppercase tracking-wider text-white/70 px-2 mb-1 font-semibold flex items-center gap-1">
+                            <i class="fa-solid fa-globe"></i> <span data-i18n="select_lang_label">Idioma / Language</span>
+                        </div>
+                        <div class="grid grid-cols-4 gap-1">
+                            <button type="button" onclick="setLanguage('pt')" id="lang-btn-pt" class="px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 bg-white text-slate-900 shadow">
+                                <span>ðŸ‡§ðŸ‡·</span> PT
+                            </button>
+                            <button type="button" onclick="setLanguage('es')" id="lang-btn-es" class="px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 text-white hover:bg-white/10">
+                                <span>ðŸ‡ªðŸ‡¸</span> ES
+                            </button>
+                            <button type="button" onclick="setLanguage('en')" id="lang-btn-en" class="px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 text-white hover:bg-white/10">
+                                <span>ðŸ‡ºðŸ‡¸</span> EN
+                            </button>
+                            <button type="button" onclick="setLanguage('fr')" id="lang-btn-fr" class="px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 text-white hover:bg-white/10">
+                                <span>ðŸ‡«ðŸ‡·</span> FR
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Welcome Message -->
+                <div class="mt-6">
+                    <h2 data-i18n="welcome_title" class="text-xl sm:text-2xl font-bold">Bem-vindo(a)! Agilize sua entrada na recepÃ§Ã£o.</h2>
+                    <p data-i18n="welcome_desc" class="text-sm text-white/85 mt-1 max-w-2xl">
+                        Preencha sua Ficha Nacional de Registro de HÃ³spedes (FNRH) em menos de 1 minuto pelo celular e receba sua chave muito mais rÃ¡pido.
+                    </p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Check-in Form Card -->
+        <div class="max-w-3xl mx-auto px-4 -mt-10 relative z-10">
+            <div id="checkin-form-container" class="bg-white rounded-2xl shadow-xl border border-slate-200/80 overflow-hidden fade-in">
+                
+                <!-- Top Step Selector: Brazilian vs Foreign Guest -->
+                <div class="bg-slate-50 p-5 sm:p-6 border-b border-slate-200">
+                    <label data-i18n="origin_type_question" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+                        1. Selecione sua origem / documento de identificaÃ§Ã£o:
+                    </label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <button type="button" onclick="setGuestOriginType('BR')" id="btn-type-br" class="flex items-center gap-3.5 p-3.5 rounded-xl border-2 border-teal-600 bg-teal-50/60 text-left transition shadow-sm">
+                            <div class="w-10 h-10 rounded-full bg-teal-600 text-white flex items-center justify-center text-lg shrink-0 font-bold">
+                                ðŸ‡§ðŸ‡·
+                            </div>
+                            <div>
+                                <div data-i18n="btn_brazilian_title" class="font-bold text-slate-900 text-sm sm:text-base">Sou Brasileiro(a)</div>
+                                <div data-i18n="btn_brazilian_sub" class="text-xs text-slate-600">Cadastro com CPF e Cidade/UF</div>
+                            </div>
+                            <i id="check-icon-br" class="fa-solid fa-circle-check text-teal-600 ml-auto text-lg"></i>
+                        </button>
+
+                        <button type="button" onclick="setGuestOriginType('INT')" id="btn-type-int" class="flex items-center gap-3.5 p-3.5 rounded-xl border-2 border-slate-200 hover:border-slate-300 bg-white text-left transition">
+                            <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center text-lg shrink-0 font-bold">
+                                ðŸŒ
+                            </div>
+                            <div>
+                                <div data-i18n="btn_foreign_title" class="font-bold text-slate-900 text-sm sm:text-base">Estrangeiro / Foreign Guest</div>
+                                <div data-i18n="btn_foreign_sub" class="text-xs text-slate-500">Cadastro simplificado com Passaporte</div>
+                            </div>
+                            <i id="check-icon-int" class="fa-regular fa-circle text-slate-300 ml-auto text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- FORM BODY -->
+                <form id="guestCheckinForm" onsubmit="handleCheckinSubmit(event)" class="p-5 sm:p-8 space-y-6" novalidate>
+                    
+                    <!-- SECTION 1: DADOS PESSOAIS -->
+                    <div>
+                        <div class="flex items-center gap-2 pb-2 mb-4 border-b border-slate-100">
+                            <span class="w-6 h-6 rounded-full bg-slate-900 text-white text-xs font-bold flex items-center justify-center">1</span>
+                            <h3 data-i18n="sec_personal_data" class="font-bold text-slate-800 text-base">Dados Pessoais e Contato</h3>
+                            <span class="ml-auto text-xs text-rose-600 font-medium">* <span data-i18n="required_legend">ObrigatÃ³rio</span></span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                            <!-- Nome Completo (ObrigatÃ³rio BR e INT) -->
+                            <div class="sm:col-span-8">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">
+                                    <span data-i18n="lbl_fullname">Nome Completo</span> <span class="text-rose-600">*</span>
+                                </label>
+                                <div class="relative">
+                                    <i class="fa-regular fa-user absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+                                    <input type="text" id="field-name" required
+                                        data-i18n-placeholder="ph_fullname"
+                                        placeholder="Ex: Cinthia Aparecida Silva"
+                                        class="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition uppercase">
+                                </div>
+                            </div>
+
+                            <!-- Data de Nascimento (ObrigatÃ³rio BR e INT) -->
+                            <div class="sm:col-span-4">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">
+                                    <span data-i18n="lbl_dob">Data de Nascimento</span> <span class="text-rose-600">*</span>
+                                </label>
+                                <input type="date" id="field-dob" required min="1920-01-01" max="2025-12-31"
+                                    class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition">
+                            </div>
+
+                            <!-- Telefone / WhatsApp (ObrigatÃ³rio BR e INT) -->
+                            <div class="sm:col-span-6">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">
+                                    <span data-i18n="lbl_phone">Telefone / WhatsApp (Com DDD/DDI)</span> <span class="text-rose-600">*</span>
+                                </label>
+                                <div class="relative">
+                                    <i class="fa-brands fa-whatsapp absolute left-3.5 top-3 text-emerald-600 text-sm"></i>
+                                    <input type="tel" id="field-phone" required
+                                        oninput="handlePhoneMask(this)"
+                                        data-i18n-placeholder="ph_phone"
+                                        placeholder="(62) 98127-8027"
+                                        class="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition">
+                                </div>
+                            </div>
+
+                            <!-- E-mail (ObrigatÃ³rio BR e INT) -->
+                            <div class="sm:col-span-6">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">
+                                    <span data-i18n="lbl_email">E-mail</span> <span class="text-rose-600">*</span>
+                                </label>
+                                <div class="relative">
+                                    <i class="fa-regular fa-envelope absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+                                    <input type="email" id="field-email" required
+                                        placeholder="hospede@email.com"
+                                        class="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition lowercase">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 2: DOCUMENTAÃ‡ÃƒO E NACIONALIDADE -->
+                    <div>
+                        <div class="flex items-center gap-2 pb-2 mb-4 border-b border-slate-100">
+                            <span class="w-6 h-6 rounded-full bg-slate-900 text-white text-xs font-bold flex items-center justify-center">2</span>
+                            <h3 data-i18n="sec_documents" class="font-bold text-slate-800 text-base">DocumentaÃ§Ã£o e Nacionalidade</h3>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                            <!-- Nacionalidade (ObrigatÃ³rio BR e INT) -->
+                            <div class="sm:col-span-6">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">
+                                    <span data-i18n="lbl_nationality">Nacionalidade</span> <span class="text-rose-600">*</span>
+                                </label>
+                                <select id="field-nationality" required onchange="handleNationalityChange(this.value)"
+                                    class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition font-medium">
+                                    <option value="BRASIL">ðŸ‡§ðŸ‡· BRASIL</option>
+                                    <option value="ARGENTINA">ðŸ‡¦ðŸ‡· ARGENTINA</option>
+                                    <option value="URUGUAI">ðŸ‡ºðŸ‡¾ URUGUAI</option>
+                                    <option value="CHILE">ðŸ‡¨ðŸ‡± CHILE</option>
+                                    <option value="COLÃ”MBIA">ðŸ‡¨ðŸ‡´ COLÃ”MBIA</option>
+                                    <option value="PERU">ðŸ‡µðŸ‡ª PERU</option>
+                                    <option value="ESTADOS UNIDOS">ðŸ‡ºðŸ‡¸ ESTADOS UNIDOS (USA)</option>
+                                    <option value="CANADÃ">ðŸ‡¨ðŸ‡¦ CANADÃ</option>
+                                    <option value="FRANÃ‡A">ðŸ‡«ðŸ‡· FRANÃ‡A (FRANCE)</option>
+                                    <option value="ESPANHA">ðŸ‡ªðŸ‡¸ ESPANHA (ESPAÃ‘A)</option>
+                                    <option value="PORTUGAL">ðŸ‡µðŸ‡¹ PORTUGAL</option>
+                                    <option value="ITÃLIA">ðŸ‡®ðŸ‡¹ ITÃLIA</option>
+                                    <option value="ALEMANHA">ðŸ‡©ðŸ‡ª ALEMANHA</option>
+                                    <option value="REINO UNIDO">ðŸ‡¬ðŸ‡§ REINO UNIDO (UK)</option>
+                                    <option value="SUÃÃ‡A">ðŸ‡¨ðŸ‡­ SUÃÃ‡A</option>
+                                    <option value="MÃ‰XICO">ðŸ‡²ðŸ‡½ MÃ‰XICO</option>
+                                    <option value="OUTRO">ðŸŒ OUTRO PAÃS / OTHER</option>
+                                </select>
+                            </div>
+
+                            <!-- CPF (ObrigatÃ³rio apenas para Brasileiros) -->
+                            <div id="wrapper-cpf" class="sm:col-span-6">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">
+                                    <span data-i18n="lbl_cpf">CPF</span> <span class="text-rose-600">*</span>
+                                </label>
+                                <div class="relative">
+                                    <i class="fa-regular fa-id-card absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+                                    <input type="text" id="field-cpf" maxlength="14"
+                                        oninput="handleCpfMask(this)"
+                                        placeholder="000.000.000-00"
+                                        class="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition font-mono">
+                                </div>
+                            </div>
+
+                            <!-- Passaporte (ObrigatÃ³rio para Estrangeiros) -->
+                            <div id="wrapper-passport" class="sm:col-span-6 hidden">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">
+                                    <span data-i18n="lbl_passport">NÂº do Passaporte / Documento</span> <span class="text-rose-600">*</span>
+                                </label>
+                                <div class="relative">
+                                    <i class="fa-solid fa-passport absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+                                    <input type="text" id="field-passport"
+                                        data-i18n-placeholder="ph_passport"
+                                        placeholder="Ex: AA1234567"
+                                        class="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition uppercase font-mono">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 3: ENDEREÃ‡O / LOCAL DE ORIGEM (ObrigatÃ³rio para Brasileiros conforme imagem do PMS) -->
+                    <div id="section-br-address" class="bg-slate-50/80 p-4 sm:p-5 rounded-2xl border border-slate-200/90">
+                        <div class="flex items-center justify-between pb-2 mb-4 border-b border-slate-200">
+                            <div class="flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-full bg-slate-900 text-white text-xs font-bold flex items-center justify-center">3</span>
+                                <h3 data-i18n="sec_origin_address" class="font-bold text-slate-800 text-base">Local de Origem (Cidade / Estado)</h3>
+                            </div>
+                            <span class="text-[11px] bg-teal-100 text-teal-800 px-2 py-0.5 rounded-md font-semibold">PadrÃ£o FNRH Brasil</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                            <!-- CEP com autopreenchimento opcional para facilitar pro hÃ³spede -->
+                            <div class="sm:col-span-4">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                                    <span data-i18n="lbl_cep">CEP (Busca RÃ¡pida)</span>
+                                    <span class="text-[10px] text-teal-600 font-normal">Opcional</span>
+                                </label>
+                                <div class="relative">
+                                    <input type="text" id="field-cep" maxlength="9"
+                                        oninput="handleCepLookup(this)"
+                                        placeholder="00000-000"
+                                        class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-teal-500 outline-none transition font-mono">
+                                    <span id="cep-loading" class="hidden absolute right-3 top-2.5 text-teal-600">
+                                        <i class="fa-solid fa-circle-notch fa-spin"></i>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- UF (ObrigatÃ³rio BR) -->
+                            <div class="sm:col-span-3">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">
+                                    <span data-i18n="lbl_uf">UF (Estado)</span> <span class="text-rose-600">*</span>
+                                </label>
+                                <select id="field-uf"
+                                    class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-teal-500 outline-none transition font-semibold">
+                                    <option value="">Selecione...</option>
+                                    <option value="AC">AC - Acre</option>
+                                    <option value="AL">AL - Alagoas</option>
+                                    <option value="AP">AP - AmapÃ¡</option>
+                                    <option value="AM">AM - Amazonas</option>
+                                    <option value="BA">BA - Bahia</option>
+                                    <option value="CE">CE - CearÃ¡</option>
+                                    <option value="DF">DF - Distrito Federal</option>
+                                    <option value="ES">ES - EspÃ­rito Santo</option>
+                                    <option value="GO">GO - GoiÃ¡s</option>
+                                    <option value="MA">MA - MaranhÃ£o</option>
+                                    <option value="MT">MT - Mato Grosso</option>
+                                    <option value="MS">MS - Mato Grosso do Sul</option>
+                                    <option value="MG">MG - Minas Gerais</option>
+                                    <option value="PA">PA - ParÃ¡</option>
+                                    <option value="PB">PB - ParaÃ­ba</option>
+                                    <option value="PR">PR - ParanÃ¡</option>
+                                    <option value="PE">PE - Pernambuco</option>
+                                    <option value="PI">PI - PiauÃ­</option>
+                                    <option value="RJ">RJ - Rio de Janeiro</option>
+                                    <option value="RN">RN - Rio Grande do Norte</option>
+                                    <option value="RS">RS - Rio Grande do Sul</option>
+                                    <option value="RO">RO - RondÃ´nia</option>
+                                    <option value="RR">RR - Roraima</option>
+                                    <option value="SC">SC - Santa Catarina</option>
+                                    <option value="SP">SP - SÃ£o Paulo</option>
+                                    <option value="SE">SE - Sergipe</option>
+                                    <option value="TO">TO - Tocantins</option>
+                                </select>
+                            </div>
+
+                            <!-- Cidade (ObrigatÃ³rio BR) -->
+                            <div class="sm:col-span-5">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">
+                                    <span data-i18n="lbl_city">Cidade</span> <span class="text-rose-600">*</span>
+                                </label>
+                                <input type="text" id="field-city"
+                                    placeholder="Ex: LADAINHA / BELO HORIZONTE"
+                                    class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-teal-500 outline-none transition uppercase">
+                            </div>
+
+                            <!-- PaÃ­s (Fixo BRASIL conforme tela do sistema) -->
+                            <div class="sm:col-span-4">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">
+                                    <span data-i18n="lbl_country">PaÃ­s de ResidÃªncia</span> <span class="text-rose-600">*</span>
+                                </label>
+                                <input type="text" id="field-country" value="BRASIL" readonly
+                                    class="w-full px-3.5 py-2.5 bg-slate-200/70 border border-slate-300 rounded-xl text-sm text-slate-700 font-semibold cursor-not-allowed">
+                            </div>
+
+                            <!-- EndereÃ§o / Bairro (Opcional mas ajuda caso o hÃ³spede preencha o CEP) -->
+                            <div class="sm:col-span-8">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                                    <span data-i18n="lbl_address_opt">EndereÃ§o / Bairro</span>
+                                    <span class="text-[10px] text-slate-400 font-normal" data-i18n="lbl_optional">Opcional</span>
+                                </label>
+                                <input type="text" id="field-address"
+                                    placeholder="Rua, NÃºmero, Bairro (Preenchido automaticamente se digitar o CEP)"
+                                    class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-teal-500 outline-none transition uppercase">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 4: INFORMAÃ‡Ã•ES ESTRATÃ‰GICAS DE HOSPEDAGEM (SUGESTÃƒO DE MELHORIA P/ BI) -->
+                    <div>
+                        <div class="flex items-center gap-2 pb-2 mb-4 border-b border-slate-100">
+                            <span class="w-6 h-6 rounded-full bg-slate-900 text-white text-xs font-bold flex items-center justify-center" id="step-num-extra">4</span>
+                            <h3 data-i18n="sec_stay_details" class="font-bold text-slate-800 text-base">Detalhes da Estadia & Pesquisa RÃ¡pida</h3>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <!-- Como conheceu o hotel (Presente na imagem do PMS!) -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">
+                                    <span data-i18n="lbl_channel">Como reservou / conheceu o hotel?</span>
+                                </label>
+                                <select id="field-channel" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-teal-500 outline-none transition">
+                                    <option value="Booking.com">Booking.com</option>
+                                    <option value="Reserva Direta / WhatsApp">WhatsApp / Telefone Direto</option>
+                                    <option value="Instagram / Redes Sociais">Instagram / Google</option>
+                                    <option value="Expedia / Decolar">Decolar / Expedia</option>
+                                    <option value="AgÃªncia / Operadora">AgÃªncia de Viagens / Guia</option>
+                                    <option value="Empresa / Corporativo">ConvÃªnio / Empresa</option>
+                                    <option value="IndicaÃ§Ã£o / JÃ¡ sou cliente">JÃ¡ me hospedei antes / IndicaÃ§Ã£o</option>
+                                </select>
+                            </div>
+
+                            <!-- Motivo da Viagem -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">
+                                    <span data-i18n="lbl_purpose">Motivo da Viagem</span>
+                                </label>
+                                <select id="field-purpose" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-teal-500 outline-none transition">
+                                    <option value="Lazer / Turismo">ðŸ–ï¸ Lazer / Turismo</option>
+                                    <option value="NegÃ³cios / Trabalho">ðŸ’¼ NegÃ³cios / Trabalho</option>
+                                    <option value="Evento / Congresso">ðŸŽŸï¸ Evento / Show / Congresso</option>
+                                    <option value="TrÃ¢nsito / ConexÃ£o">âœˆï¸ TrÃ¢nsito / Passagem</option>
+                                </select>
+                            </div>
+
+                            <!-- PrevisÃ£o de Chegada / Acompanhantes -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">
+                                    <span data-i18n="lbl_guests_count">Total de Pessoas no Quarto</span>
+                                </label>
+                                <select id="field-guests-count" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-teal-500 outline-none transition">
+                                    <option value="1">1 Adulto (Individual)</option>
+                                    <option value="2" selected>2 Pessoas (Casal / Duplo)</option>
+                                    <option value="3">3 Pessoas (Triplo)</option>
+                                    <option value="4">4 ou mais (FamÃ­lia)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 5: ASSINATURA DIGITAL NA TELA & LGPD -->
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                <i class="fa-solid fa-signature text-teal-600"></i>
+                                <span data-i18n="lbl_signature">Rubrica / Assinatura Digital do HÃ³spede (Opcional)</span>
+                            </label>
+                            <button type="button" onclick="clearSignature()" class="text-xs text-slate-500 hover:text-rose-600 font-medium flex items-center gap-1">
+                                <i class="fa-solid fa-eraser"></i> <span data-i18n="btn_clear_sig">Limpar</span>
+                            </button>
+                        </div>
+                        <div class="bg-white border border-dashed border-slate-300 rounded-lg overflow-hidden h-28 relative">
+                            <canvas id="signatureCanvas" class="w-full h-full block"></canvas>
+                            <div id="sig-placeholder" class="pointer-events-none absolute inset-0 flex items-center justify-center text-xs text-slate-300 select-none">
+                                <span data-i18n="ph_signature">Assine aqui com o dedo ou mouse</span>
+                            </div>
+                        </div>
+
+                        <label class="flex items-start gap-2.5 mt-4 cursor-pointer select-none">
+                            <input type="checkbox" id="field-lgpd" required checked class="mt-1 w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500">
+                            <span data-i18n="lbl_lgpd_terms" class="text-xs text-slate-600 leading-relaxed">
+                                Confirmo que os dados informados sÃ£o verdadeiros para fins de registro oficial de hospedagem (FNRH / MinistÃ©rio do Turismo) e concordo com a PolÃ­tica de Privacidade (LGPD).
+                            </span>
+                        </label>
+                    </div>
+
+                    <!-- Validation Alert Message Box -->
+                    <div id="form-error-box" class="hidden p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-center gap-2.5">
+                        <i class="fa-solid fa-triangle-exclamation text-base shrink-0"></i>
+                        <span id="form-error-text">Por favor, preencha todos os campos obrigatÃ³rios destacados.</span>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" id="submit-checkin-btn" class="w-full py-4 px-6 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-[0.99] text-white font-bold text-base shadow-lg shadow-teal-600/25 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span data-i18n="btn_submit_checkin">Confirmar Check-in Online</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- TELA DE SUCESSO PÃ“S CHECK-IN (VOUCHER DIGITAL) -->
+            <div id="checkin-success-container" class="hidden bg-white rounded-2xl shadow-xl border border-slate-200 p-6 sm:p-10 text-center fade-in">
+                <div class="w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-4xl mx-auto mb-4 shadow-inner">
+                    <i class="fa-solid fa-check-double"></i>
+                </div>
+                <span class="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold text-xs uppercase tracking-wider border border-emerald-200">
+                    Fast Check-in ConcluÃ­do
+                </span>
+                <h2 data-i18n="success_title" class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-3">Tudo pronto para sua chegada!</h2>
+                <p data-i18n="success_subtitle" class="text-sm text-slate-600 mt-1 max-w-md mx-auto">
+                    Seus dados jÃ¡ foram enviados para a recepÃ§Ã£o. Ao chegar no balcÃ£o, basta informar seu nome para retirar a chave.
+                </p>
+
+                <!-- Digital Fast-Pass Card -->
+                <div class="mt-6 bg-slate-50 rounded-2xl p-5 border border-slate-200 max-w-md mx-auto text-left space-y-3">
+                    <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                        <div>
+                            <div class="text-[11px] uppercase font-bold text-slate-400">Hotel Selecionado</div>
+                            <div id="voucher-hotel-name" class="font-extrabold text-slate-900 text-base">Hit Hotel</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-[11px] uppercase font-bold text-slate-400">Protocolo</div>
+                            <div id="voucher-protocol" class="font-mono font-bold text-teal-600 text-sm">#CHK-9482</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                            <span class="text-slate-400 block">HÃ³spede Titular:</span>
+                            <span id="voucher-guest-name" class="font-bold text-slate-800">CINTHIA APARECIDA SILVA</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block">Documento / Origem:</span>
+                            <span id="voucher-guest-doc" class="font-bold text-slate-800">BRASIL (MG)</span>
+                        </div>
+                    </div>
+                    <!-- Cortesia: Wi-Fi Antecipado -->
+                    <div class="bg-teal-50/80 border border-teal-200/80 rounded-xl p-3 flex items-center gap-3 mt-2">
+                        <i class="fa-solid fa-wifi text-teal-600 text-lg"></i>
+                        <div class="text-xs">
+                            <div class="font-bold text-teal-950" data-i18n="wifi_title">Wi-Fi Liberado na Chegada</div>
+                            <div class="text-teal-700">Rede: <strong id="voucher-wifi-ssid">HitHotel_Guests</strong> â€¢ Senha: <strong>bemvindo2026</strong></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+                    <button onclick="resetCheckinForm()" class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition flex items-center gap-2">
+                        <i class="fa-solid fa-user-plus"></i> <span data-i18n="btn_new_checkin">Cadastrar Outro HÃ³spede / Acompanhante</span>
+                    </button>
+                    <button id="voucher-admin-btn" onclick="requestAdminAccess('admin')" class="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs transition flex items-center gap-2">
+                        <i class="fa-solid fa-lock text-amber-400"></i> Ãrea da RecepÃ§Ã£o (Senha)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- =================================================================== -->
+    <!-- VISÃƒO 2: ÃREA ADMINISTRATIVA, RELATÃ“RIOS & INTELIGÃŠNCIA ESTRATÃ‰GICA -->
+    <!-- =================================================================== -->
+    <section id="admin-view" class="hidden flex-grow bg-slate-100 pb-16 fade-in">
+        <!-- Admin Header -->
+        <div class="bg-white border-b border-slate-200 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 py-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 uppercase tracking-wider">Grupo Hoteleiro â€¢ Central BI</span>
+                        <span class="text-xs text-slate-400">Atualizado em tempo real</span>
+                    </div>
+                    <h1 class="text-2xl font-extrabold text-slate-900 mt-1">Painel Administrativo & AnÃ¡lise EstratÃ©gica de HÃ³spedes</h1>
+                    <p class="text-xs sm:text-sm text-slate-500">Controle unificado: <strong>Hit Hotel</strong>, <strong>Porto Salvador</strong> e <strong>Porto das Ã‚ncoras</strong></p>
+                </div>
+
+                <!-- Global Admin Filters -->
+                <div class="flex flex-wrap items-center gap-2.5 bg-slate-50 p-2.5 rounded-2xl border border-slate-200">
+                    <!-- Filtro de Hotel -->
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-slate-400 px-1">Unidade Hoteleira</label>
+                        <select id="admin-filter-hotel" onchange="renderAdminDashboard()" class="bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-teal-500">
+                            <option value="ALL">ðŸ¨ Todas as 3 Bandeiras (Consolidado)</option>
+                            <option value="hit">ðŸ–ï¸ Hit Hotel</option>
+                            <option value="salvador">âš“ Hotel Porto Salvador</option>
+                            <option value="ancoras">ðŸŒ´ Hotel Porto das Ã‚ncoras</option>
+                        </select>
+                    </div>
+
+                    <!-- Filtro de Perfil (Brasileiro vs Estrangeiro) -->
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-slate-400 px-1">Perfil de HÃ³spede</label>
+                        <select id="admin-filter-origin" onchange="renderAdminDashboard()" class="bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-teal-500">
+                            <option value="ALL">ðŸŒŽ Todos (Brasil + Exterior)</option>
+                            <option value="BR">ðŸ‡§ðŸ‡· Apenas Brasileiros</option>
+                            <option value="INT">âœˆï¸ Apenas Estrangeiros</option>
+                        </select>
+                    </div>
+
+                    <!--Filtro de PerÃ­odo -->
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-slate-400 px-1">PerÃ­odo</label>
+                        <select id="admin-filter-period" onchange="renderAdminDashboard()" class="bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-teal-500">
+                            <option value="ALL">Ãšltimos 30 dias + Hoje</option>
+                            <option value="TODAY">Apenas Check-ins de Hoje</option>
+                        </select>
+                    </div>
+
+                    <button onclick="exportCheckinsToCSV()" class="mt-3.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition">
+                        <i class="fa-solid fa-file-csv"></i> Exportar Excel / CSV
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 mt-6 space-y-6">
+            
+            <!-- KPI CARDS -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- KPI 1 -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start justify-between">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total de Check-ins</span>
+                        <div id="kpi-total" class="text-3xl font-extrabold text-slate-900 mt-1">28</div>
+                        <div id="kpi-hotel-split" class="text-xs text-emerald-600 font-semibold mt-1 flex items-center gap-1">
+                            <i class="fa-solid fa-bolt"></i> 100% digital sem fila
+                        </div>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-clipboard-check"></i>
+                    </div>
+                </div>
+
+                <!-- KPI 2 -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start justify-between">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Principal Estado Emissor (BR)</span>
+                        <div id="kpi-top-state" class="text-2xl font-extrabold text-slate-900 mt-1">Minas Gerais (MG)</div>
+                        <div id="kpi-top-state-sub" class="text-xs text-slate-500 mt-1">Foco p/ campanhas de trÃ¡fego pago</div>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-map-location-dot"></i>
+                    </div>
+                </div>
+
+                <!-- KPI 3 -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start justify-between">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">HÃ³spedes Estrangeiros</span>
+                        <div id="kpi-foreign-pct" class="text-3xl font-extrabold text-slate-900 mt-1">28.5%</div>
+                        <div id="kpi-top-country" class="text-xs text-indigo-600 font-semibold mt-1">Top 1 Exterior: Argentina ðŸ‡¦ðŸ‡·</div>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-earth-americas"></i>
+                    </div>
+                </div>
+
+                <!-- KPI 4 -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start justify-between">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">HorÃ¡rio de Pico RecepÃ§Ã£o</span>
+                        <div id="kpi-peak-hour" class="text-2xl font-extrabold text-slate-900 mt-1">14:00 Ã s 16:00</div>
+                        <div id="kpi-top-channel" class="text-xs text-amber-600 font-semibold mt-1">Canal LÃ­der: Booking.com</div>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-clock"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STRATEGIC INSIGHTS BANNER -->
+            <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-teal-900 text-white rounded-2xl p-5 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div class="flex items-start gap-3.5">
+                    <div class="w-10 h-10 rounded-xl bg-amber-400/20 border border-amber-400/40 text-amber-300 flex items-center justify-center text-lg shrink-0 mt-0.5">
+                        <i class="fa-solid fa-lightbulb"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-sm sm:text-base text-amber-300">InteligÃªncia Comercial & Marketing Hoteleiro (Gerado Automaticamente)</h3>
+                        <p id="strategic-ai-insight" class="text-xs sm:text-sm text-slate-200 mt-0.5 leading-relaxed">
+                            Carregando anÃ¡lise estratÃ©gica das unidades...
+                        </p>
+                    </div>
+                </div>
+                <button onclick="switchMainView('qrcodes')" class="shrink-0 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold transition flex items-center gap-2">
+                    <i class="fa-solid fa-qrcode text-teal-300"></i> Ver QR Codes dos 3 HotÃ©is
+                </button>
+            </div>
+
+            <!-- CHARTS GRID (ROW 1: GEOGRAPHIC ORIGIN) -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Chart 1: Origem por Estado Brasileiro (UF) -->
+                <div class="lg:col-span-7 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                                <i class="fa-solid fa-flag text-emerald-600"></i> Origem Nacional: Top Estados Brasileiros (UF)
+                            </h3>
+                            <p class="text-xs text-slate-500">De quais estados do Brasil vÃªm mais hÃ³spedes para direcionar anÃºncios</p>
+                        </div>
+                        <span class="text-[11px] font-semibold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg">Mercado Interno</span>
+                    </div>
+                    <div class="h-64">
+                        <canvas id="chartStatesUF"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 2: Origem por PaÃ­s / Nacionalidade -->
+                <div class="lg:col-span-5 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                                <i class="fa-solid fa-plane-arrival text-indigo-600"></i> Nacionalidades & Mercados Emissores
+                            </h3>
+                            <p class="text-xs text-slate-500">ProporÃ§Ã£o por paÃ­s de origem e idioma</p>
+                        </div>
+                        <span class="text-[11px] font-semibold bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-lg">Global</span>
+                    </div>
+                    <div class="h-64 flex items-center justify-center">
+                        <canvas id="chartCountries"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHARTS GRID (ROW 2: CHANNELS, PEAK HOURS & HOTEL SHARE) -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Chart 3: Canais de AquisiÃ§Ã£o (Como conheceu o hotel) -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-bullhorn text-amber-500"></i> Como Conheceram o Hotel (Canais)
+                    </h3>
+                    <p class="text-xs text-slate-500 mb-3">AnÃ¡lise de dependÃªncia de OTAs vs. Venda Direta</p>
+                    <div class="h-56">
+                        <canvas id="chartChannels"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 4: Curva de HorÃ¡rio dos Check-ins -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-user-clock text-teal-600"></i> HorÃ¡rios de RealizaÃ§Ã£o do Check-in
+                    </h3>
+                    <p class="text-xs text-slate-500 mb-3">Dimensionamento de equipe de recepÃ§Ã£o por turno</p>
+                    <div class="h-56">
+                        <canvas id="chartHours"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 5: Comparativo entre os 3 HotÃ©is + Top Cidades -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-city text-rose-500"></i> Top Cidades Emissoras & Motivo da Viagem
+                        </h3>
+                        <p class="text-xs text-slate-500 mb-3">Cidades que mais enviam clientes para a rede</p>
+                        <div id="top-cities-list" class="space-y-2.5 mt-2">
+                            <!-- Preenchido via JS -->
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                        <span class="text-slate-500 font-medium">Perfil predominante:</span>
+                        <span id="predominant-purpose-badge" class="font-bold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-lg">ðŸ–ï¸ Lazer / Turismo</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABELA DETALHADA DE CHECK-INS REALIZADOS -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-lg flex items-center gap-2">
+                            <i class="fa-solid fa-table-list text-teal-600"></i> RelatÃ³rio Operacional de Check-ins (FNRH Digital)
+                        </h3>
+                        <p class="text-xs text-slate-500">Clique em <strong>"Espelho PMS"</strong> em qualquer hÃ³spede para copiar os dados no formato exato do sistema do hotel.</p>
+                    </div>
+
+                    <!-- Search Box -->
+                    <div class="relative w-full sm:w-80">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                        <input type="text" id="admin-search-input" oninput="renderAdminDashboard()"
+                            placeholder="Buscar por nome, CPF, passaporte, cidade..."
+                            class="w-full pl-9 pr-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-teal-500 outline-none">
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                                <th class="py-3.5 px-4">Data & HorÃ¡rio</th>
+                                <th class="py-3.5 px-4">Hotel (QR Code)</th>
+                                <th class="py-3.5 px-4">HÃ³spede / Nascimento</th>
+                                <th class="py-3.5 px-4">Nacionalidade / Doc</th>
+                                <th class="py-3.5 px-4">Origem (Cidade / UF / PaÃ­s)</th>
+                                <th class="py-3.5 px-4">Contato</th>
+                                <th class="py-3.5 px-4">Canal / Motivo</th>
+                                <th class="py-3.5 px-4 text-right">AÃ§Ã£o RecepÃ§Ã£o</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-checkins-tbody" class="divide-y divide-slate-200 text-xs">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- VISÃƒO 3: CENTRAL DE QR CODES PERSONALIZADOS PARA OS 3 HOTÃ‰IS        -->
+    <!-- =================================================================== -->
+    <section id="qrcodes-view" class="hidden flex-grow bg-slate-100 py-8 px-4 fade-in">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center max-w-3xl mx-auto mb-6">
+                <span class="px-3 py-1 rounded-full bg-teal-100 text-teal-800 text-xs font-bold uppercase tracking-wider">GitHub Pages & Roteamento Oficial</span>
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-2">Plaquinhas de QR Code & ConfiguraÃ§Ã£o do Link</h1>
+                <p class="text-sm text-slate-600 mt-1">
+                    Ao ler o QR Code de qualquer hotel, o hÃ³spede Ã© direcionado <strong>diretamente para a pÃ¡gina de entrada daquela unidade</strong>, com visual limpo e sem barras administrativas.
+                </p>
+            </div>
+
+            <!-- Painel Configurador da URL Base (GitHub Pages ou DomÃ­nio PrÃ³prio) -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-5 mb-8 shadow-sm no-print">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                            <i class="fa-brands fa-github text-slate-900 text-base"></i> EndereÃ§o Base do Sistema (GitHub Pages)
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-0.5">
+                            Insira o link do seu site no GitHub Pages para atualizar os 3 QR Codes automaticamente:
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="autoDetectCurrentBaseUrl()" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center gap-1.5 transition">
+                            <i class="fa-solid fa-crosshairs text-teal-600"></i> Detectar URL Atual
+                        </button>
+                        <button type="button" onclick="applyBaseUrlToAll()" class="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition">
+                            <i class="fa-solid fa-arrows-rotate"></i> Atualizar os 3 QR Codes
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Campo de URL Principal Unificada -->
+                <div class="mt-4">
+                    <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">
+                        URL Base Principal (Exemplo: <code>https://SEU-USUARIO.github.io/NOME-DO-REPOSITORIO/</code>)
+                    </label>
+                    <div class="flex gap-2">
+                        <div class="relative flex-grow">
+                            <i class="fa-solid fa-globe absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                            <input type="text" id="qr-base-url-input" oninput="applyBaseUrlToAll()"
+                                placeholder="https://seu-usuario.github.io/check-in-online/"
+                                class="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono text-slate-800 focus:bg-white focus:ring-2 focus:ring-teal-500 outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Links individuais resultantes para cada hotel -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-3 border-t border-slate-100">
+                    <div>
+                        <label class="block text-[11px] font-bold text-teal-800 uppercase mb-1">1. Link do QR Code - Hit Hotel</label>
+                        <input type="text" id="qr-url-hit" oninput="regenerateAllQrCodes()"
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono text-slate-700 focus:bg-white focus:ring-2 focus:ring-teal-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-blue-900 uppercase mb-1">2. Link do QR Code - Porto Salvador</label>
+                        <input type="text" id="qr-url-salvador" oninput="regenerateAllQrCodes()"
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-emerald-800 uppercase mb-1">3. Link do QR Code - Porto das Ã‚ncoras</label>
+                        <input type="text" id="qr-url-ancoras" oninput="regenerateAllQrCodes()"
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono text-slate-700 focus:bg-white focus:ring-2 focus:ring-emerald-600 outline-none">
+                    </div>
+                </div>
+
+                <!-- Dica Informativa sobre o GitHub Pages -->
+                <div class="mt-4 bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 text-xs text-emerald-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="flex items-start gap-2.5">
+                        <i class="fa-solid fa-circle-check text-emerald-600 text-base mt-0.5"></i>
+                        <div>
+                            <strong>Vantagem do GitHub Pages:</strong> Ao contrÃ¡rio do Google Sites, no GitHub o sistema roda diretamente no seu prÃ³prio link sem iframe! Os parÃ¢metros <code>?hotel=hit</code>, <code>?hotel=salvador</code> e <code>?hotel=ancoras</code> funcionam nativamente em qualquer celular.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- QR Card 1: Hit Hotel -->
+                <div class="bg-white rounded-3xl border-2 border-teal-500 shadow-xl overflow-hidden flex flex-col justify-between">
+                    <div class="bg-gradient-to-br from-teal-600 to-slate-900 text-white p-6 text-center">
+                        <div class="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center text-2xl mx-auto mb-2">
+                            <i class="fa-solid fa-umbrella-beach text-teal-300"></i>
+                        </div>
+                        <span class="text-[10px] uppercase tracking-widest text-teal-200 font-bold">Fast Check-in Online</span>
+                        <h2 class="text-2xl font-extrabold mt-0.5">Hit Hotel</h2>
+                        <p class="text-xs text-white/80">Salvador - BA â€¢ PT, ES, EN, FR</p>
+                    </div>
+                    <div class="p-6 text-center">
+                        <div class="bg-white p-4 rounded-2xl border-2 border-slate-200 inline-block shadow-sm">
+                            <canvas id="qr-canvas-hit" class="w-48 h-48 mx-auto block"></canvas>
+                        </div>
+                        <p id="qr-label-hit" class="text-[11px] text-slate-500 mt-3 font-mono bg-slate-100 py-1.5 px-2.5 rounded-lg break-all">
+                            https://sites.google.com/view/check-in-online-hotor/full-page-embed?hotel=hit
+                        </p>
+                        <p class="text-xs text-slate-600 mt-3 font-medium">Direciona <strong>exclusivamente para o formulÃ¡rio do Hit Hotel</strong> (sem menus administrativos).</p>
+                    </div>
+                    <div class="p-4 bg-slate-50 border-t border-slate-200 space-y-2 no-print">
+                        <a id="qr-open-hit" href="https://sites.google.com/view/check-in-online-hotor/full-page-embed?hotel=hit" target="_blank" class="w-full py-2.5 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Testar Link do Hit Hotel
+                        </a>
+                        <div class="flex gap-2">
+                            <button onclick="simulateGuestQrScan('hit')" class="flex-1 py-2 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs transition flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-mobile-screen"></i> Simular na Tela
+                            </button>
+                            <button onclick="downloadQrImage('qr-canvas-hit', 'QRCode_Hit_Hotel.png')" title="Baixar Imagem PNG do QR Code" class="py-2 px-3 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs transition">
+                                <i class="fa-solid fa-download"></i> PNG
+                            </button>
+                            <button onclick="window.print()" title="Imprimir Plaquinha" class="py-2 px-3 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs transition">
+                                <i class="fa-solid fa-print"></i>
+                            </button>
+                        </div>
+                        <button onclick="copyDedicatedHotelHtml('hit')" class="w-full py-2 px-3 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold text-[11px] transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-code text-teal-700"></i> Copiar HTML Exclusivo Hit Hotel (Modo Fixo)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- QR Card 2: Hotel Porto Salvador -->
+                <div class="bg-white rounded-3xl border-2 border-blue-800 shadow-xl overflow-hidden flex flex-col justify-between">
+                    <div class="bg-gradient-to-br from-blue-900 via-indigo-950 to-slate-900 text-white p-6 text-center">
+                        <div class="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center text-2xl mx-auto mb-2">
+                            <i class="fa-solid fa-anchor text-amber-400"></i>
+                        </div>
+                        <span class="text-[10px] uppercase tracking-widest text-amber-300 font-bold">Fast Check-in Online</span>
+                        <h2 class="text-2xl font-extrabold mt-0.5">Porto Salvador</h2>
+                        <p class="text-xs text-white/80">Salvador - BA â€¢ PT, ES, EN, FR</p>
+                    </div>
+                    <div class="p-6 text-center">
+                        <div class="bg-white p-4 rounded-2xl border-2 border-slate-200 inline-block shadow-sm">
+                            <canvas id="qr-canvas-salvador" class="w-48 h-48 mx-auto block"></canvas>
+                        </div>
+                        <p id="qr-label-salvador" class="text-[11px] text-slate-500 mt-3 font-mono bg-slate-100 py-1.5 px-2.5 rounded-lg break-all">
+                            https://sites.google.com/view/check-in-online-hotor/full-page-embed?hotel=salvador
+                        </p>
+                        <p class="text-xs text-slate-600 mt-3 font-medium">Direciona <strong>exclusivamente para o formulÃ¡rio do Porto Salvador</strong> (sem menus administrativos).</p>
+                    </div>
+                    <div class="p-4 bg-slate-50 border-t border-slate-200 space-y-2 no-print">
+                        <a id="qr-open-salvador" href="https://sites.google.com/view/check-in-online-hotor/full-page-embed?hotel=salvador" target="_blank" class="w-full py-2.5 px-3 rounded-xl bg-blue-900 hover:bg-blue-950 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Testar Link do Porto Salvador
+                        </a>
+                        <div class="flex gap-2">
+                            <button onclick="simulateGuestQrScan('salvador')" class="flex-1 py-2 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs transition flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-mobile-screen"></i> Simular na Tela
+                            </button>
+                            <button onclick="downloadQrImage('qr-canvas-salvador', 'QRCode_Porto_Salvador.png')" title="Baixar Imagem PNG do QR Code" class="py-2 px-3 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs transition">
+                                <i class="fa-solid fa-download"></i> PNG
+                            </button>
+                            <button onclick="window.print()" title="Imprimir Plaquinha" class="py-2 px-3 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs transition">
+                                <i class="fa-solid fa-print"></i>
+                            </button>
+                        </div>
+                        <button onclick="copyDedicatedHotelHtml('salvador')" class="w-full py-2 px-3 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold text-[11px] transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-code text-blue-900"></i> Copiar HTML Exclusivo Porto Salvador (Modo Fixo)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- QR Card 3: Hotel Porto das Ã‚ncoras -->
+                <div class="bg-white rounded-3xl border-2 border-emerald-600 shadow-xl overflow-hidden flex flex-col justify-between">
+                    <div class="bg-gradient-to-br from-emerald-700 via-teal-800 to-slate-900 text-white p-6 text-center">
+                        <div class="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center text-2xl mx-auto mb-2">
+                            <i class="fa-solid fa-water text-emerald-300"></i>
+                        </div>
+                        <span class="text-[10px] uppercase tracking-widest text-emerald-200 font-bold">Fast Check-in Online</span>
+                        <h2 class="text-2xl font-extrabold mt-0.5">Porto das Ã‚ncoras</h2>
+                        <p class="text-xs text-white/80">Porto Seguro - BA â€¢ PT, ES, EN, FR</p>
+                    </div>
+                    <div class="p-6 text-center">
+                        <div class="bg-white p-4 rounded-2xl border-2 border-slate-200 inline-block shadow-sm">
+                            <canvas id="qr-canvas-ancoras" class="w-48 h-48 mx-auto block"></canvas>
+                        </div>
+                        <p id="qr-label-ancoras" class="text-[11px] text-slate-500 mt-3 font-mono bg-slate-100 py-1.5 px-2.5 rounded-lg break-all">
+                            https://sites.google.com/view/check-in-online-hotor/full-page-embed?hotel=ancoras
+                        </p>
+                        <p class="text-xs text-slate-600 mt-3 font-medium">Direciona <strong>exclusivamente para o formulÃ¡rio do Porto das Ã‚ncoras</strong> (sem menus administrativos).</p>
+                    </div>
+                    <div class="p-4 bg-slate-50 border-t border-slate-200 space-y-2 no-print">
+                        <a id="qr-open-ancoras" href="https://sites.google.com/view/check-in-online-hotor/full-page-embed?hotel=ancoras" target="_blank" class="w-full py-2.5 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Testar Link do Porto das Ã‚ncoras
+                        </a>
+                        <div class="flex gap-2">
+                            <button onclick="simulateGuestQrScan('ancoras')" class="flex-1 py-2.5 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs transition flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-mobile-screen"></i> Simular na Tela
+                            </button>
+                            <button onclick="downloadQrImage('qr-canvas-ancoras', 'QRCode_Porto_das_Ancoras.png')" title="Baixar Imagem PNG do QR Code" class="py-2 px-3 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs transition">
+                                <i class="fa-solid fa-download"></i> PNG
+                            </button>
+                            <button onclick="window.print()" title="Imprimir Plaquinha" class="py-2 px-3 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs transition">
+                                <i class="fa-solid fa-print"></i>
+                            </button>
+                        </div>
+                        <button onclick="copyDedicatedHotelHtml('ancoras')" class="w-full py-2 px-3 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold text-[11px] transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-code text-emerald-800"></i> Copiar HTML Exclusivo Porto das Ã‚ncoras (Modo Fixo)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toast de confirmaÃ§Ã£o de cÃ³pia de HTML exclusivo -->
+            <div id="qr-copy-feedback" class="hidden fixed bottom-6 right-6 bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl border border-teal-500 text-xs font-bold flex items-center gap-2.5 z-50">
+                <i class="fa-solid fa-circle-check text-teal-400 text-base"></i>
+                <span id="qr-copy-feedback-text">CÃ³digo HTML copiado com sucesso!</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- RODAPÃ‰ DISCRETO COM CADEADO PARA ADMIN (CASO ACESSE PELO QR CODE)   -->
+    <!-- =================================================================== -->
+    <footer class="bg-slate-100 border-t border-slate-200/80 py-4 px-4 text-center text-[11px] text-slate-400 no-print mt-auto">
+        <div class="max-w-3xl mx-auto flex items-center justify-between">
+            <span>Sistema Oficial de FNRH Digital â€¢ LGPD Protegido</span>
+            <button onclick="requestAdminAccess('admin')" class="text-slate-300 hover:text-slate-600 transition flex items-center gap-1" title="Acesso Restrito da RecepÃ§Ã£o / GerÃªncia">
+                <i class="fa-solid fa-lock text-[10px]"></i> Acesso RecepÃ§Ã£o
+            </button>
+        </div>
+    </footer>
+
+    <!-- =================================================================== -->
+    <!-- MODAL DE SENHA ADMINISTRATIVA (SENHA: master)                       -->
+    <!-- =================================================================== -->
+    <div id="password-modal" class="fixed inset-0 bg-slate-900/75 backdrop-blur-sm z-50 hidden items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-2xl max-w-sm w-full overflow-hidden shadow-2xl border border-slate-200 fade-in">
+            <div class="bg-slate-900 text-white p-5 text-center relative">
+                <button onclick="closePasswordModal()" class="absolute top-3.5 right-3.5 w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <div class="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/40 text-amber-400 flex items-center justify-center text-xl mx-auto mb-2">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <h3 class="font-extrabold text-base">Acesso Restrito â€¢ AdministraÃ§Ã£o</h3>
+                <p class="text-xs text-slate-400 mt-0.5">Digite a senha gerencial para acessar relatÃ³rios e QR Codes</p>
+            </div>
+            <form onsubmit="verifyAdminPassword(event)" class="p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Senha de Acesso</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-key absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                        <input type="password" id="admin-password-input" required
+                            placeholder="Digite a senha..."
+                            class="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-teal-500 outline-none">
+                    </div>
+                    <p id="password-error-msg" class="hidden text-xs text-rose-600 font-semibold mt-1.5 flex items-center gap-1">
+                        <i class="fa-solid fa-circle-exclamation"></i> Senha incorreta. Tente novamente.
+                    </p>
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" onclick="closePasswordModal()" class="flex-1 py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="flex-1 py-2.5 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-unlock"></i> Liberar Acesso
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- MODAL "ESPELHO DO SISTEMA PMS" (BASEADO NA IMAGEM ENVIADA)          -->
+    <!-- =================================================================== -->
+    <div id="pms-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-3xl w-full overflow-hidden shadow-2xl border border-slate-300 fade-in">
+            <!-- Top Modern Modal Header -->
+            <div class="bg-slate-900 text-white px-5 py-3.5 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-desktop text-amber-400"></i>
+                    <div>
+                        <h3 class="font-bold text-sm">Espelho de IntegraÃ§Ã£o RecepÃ§Ã£o ("Complemento dos dados")</h3>
+                        <p class="text-[11px] text-slate-400">Clique em qualquer campo para copiar e colar diretamente no sistema do hotel</p>
+                    </div>
+                </div>
+                <button onclick="closePmsModal()" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!--Replica Visual da Janela "Complemento dos dados" enviada pelo usuÃ¡rio -->
+            <div class="p-4 sm:p-6 bg-slate-200">
+                <div class="pms-legacy-box p-3 rounded shadow-inner space-y-3">
+                    
+                    <!-- Legacy Section 1: Dados pessoais -->
+                    <div>
+                        <div class="pms-legacy-header mb-2">Dados pessoais</div>
+                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+                            <div class="sm:col-span-7 flex items-center gap-1.5">
+                                <label class="text-xs font-medium text-slate-800 w-14 shrink-0">Nome</label>
+                                <input type="text" id="pms-nome" readonly class="pms-legacy-input w-full font-bold bg-blue-600 text-white">
+                                <button onclick="copyField('pms-nome')" title="Copiar Nome" class="px-2 py-1 bg-slate-700 hover:bg-slate-900 text-white rounded text-[10px] shrink-0">Copiar</button>
+                            </div>
+                            <div class="sm:col-span-5 flex items-center gap-1.5">
+                                <label class="text-xs font-medium text-slate-800 shrink-0">Data de nascimento</label>
+                                <input type="text" id="pms-dob" readonly class="pms-legacy-input w-28">
+                                <button onclick="copyField('pms-dob')" class="px-2 py-1 bg-slate-700 hover:bg-slate-900 text-white rounded text-[10px] shrink-0">Copiar</button>
+                            </div>
+
+                            <div class="sm:col-span-6 flex items-center gap-1.5">
+                                <label class="text-xs font-medium text-slate-800 w-14 shrink-0">Fone</label>
+                                <input type="text" id="pms-fone" readonly class="pms-legacy-input w-full">
+                                <button onclick="copyField('pms-fone')" class="px-2 py-1 bg-slate-700 hover:bg-slate-900 text-white rounded text-[10px] shrink-0">Copiar</button>
+                            </div>
+                            <div class="sm:col-span-6 flex items-center gap-1.5">
+                                <label class="text-xs font-medium text-blue-700 underline shrink-0">Nacionalidade:</label>
+                                <input type="text" id="pms-nacionalidade" readonly class="pms-legacy-input w-full font-semibold">
+                                <button onclick="copyField('pms-nacionalidade')" class="px-2 py-1 bg-slate-700 hover:bg-slate-900 text-white rounded text-[10px] shrink-0">Copiar</button>
+                            </div>
+
+                            <div class="sm:col-span-7 flex items-center gap-1.5">
+                                <label class="text-xs font-medium text-slate-800 w-14 shrink-0">E-Mail</label>
+                                <input type="text" id="pms-email" readonly class="pms-legacy-input w-full">
+                                <button onclick="copyField('pms-email')" class="px-2 py-1 bg-slate-700 hover:bg-slate-900 text-white rounded text-[10px] shrink-0">Copiar</button>
+                            </div>
+                            <div class="sm:col-span-5 flex items-center gap-1.5">
+                                <label class="text-xs font-medium text-blue-700 underline shrink-0">Como conheceu:</label>
+                                <input type="text" id="pms-canal" readonly class="pms-legacy-input w-full">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Legacy Section 2: DocumentaÃ§Ã£o -->
+                    <div>
+                        <div class="pms-legacy-header mb-2">DocumentaÃ§Ã£o</div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 items-center">
+                            <div class="flex items-center gap-1.5">
+                                <label class="text-xs font-medium text-slate-800 w-14 shrink-0">CPF</label>
+                                <input type="text" id="pms-cpf" readonly class="pms-legacy-input w-full font-mono">
+                                <button onclick="copyField('pms-cpf')" class="px-2 py-1 bg-slate-700 hover:bg-slate-900 text-white rounded text-[10px] shrink-0">Copiar</button>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <label class="text-xs font-medium text-slate-800 shrink-0">Passaporte</label>
+                                <input type="text" id="pms-passaporte" readonly class="pms-legacy-input w-full font-mono">
+                                <button onclick="copyField('pms-passaporte')" class="px-2 py-1 bg-slate-700 hover:bg-slate-900 text-white rounded text-[10px] shrink-0">Copiar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Legacy Section 3: EndereÃ§o -->
+                    <div>
+                        <div class="pms-legacy-header mb-2">EndereÃ§o</div>
+                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+                            <div class="sm:col-span-3 flex items-center gap-1.5">
+                                <label class="text-xs font-medium text-slate-800 shrink-0">Cep</label>
+                                <input type="text" id="pms-cep" readonly class="pms-legacy-input w-full">
+                            </div>
+                            <div class="sm:col-span-3 flex items-center gap-1.5">
+                                <label class="text-xs font-medium text-slate-800 shrink-0">UF</label>
+                                <input type="text" id="pms-uf" readonly class="pms-legacy-input w-full font-bold">
+                                <button onclick="copyField('pms-uf')" class="px-2 py-1 bg-slate-700 hover:bg-slate-900 text-white rounded text-[10px] shrink-0">Copiar</button>
+                            </div>
+                            <div class="sm:col-span-6 flex items-center gap-1.5">
+                                <label class="text-xs font-medium text-slate-800 shrink-0">Cidade</label>
+                                <input type="text" id="pms-cidade" readonly class="pms-legacy-input w-full font-bold">
+                                <button onclick="copyField('pms-cidade')" class="px-2 py-1 bg-slate-700 hover:bg-slate-900 text-white rounded text-[10px] shrink-0">Copiar</button>
+                            </div>
+                            <div class="sm:col-span-6 flex items-center gap-1.5">
+                                <label class="text-xs font-medium text-blue-700 underline shrink-0">PaÃ­s</label>
+                                <input type="text" id="pms-pais" readonly class="pms-legacy-input w-full font-bold">
+                            </div>
+                            <div class="sm:col-span-6 flex items-center gap-1.5">
+                                <label class="text-xs font-medium text-slate-800 shrink-0">EndereÃ§o</label>
+                                <input type="text" id="pms-endereco" readonly class="pms-legacy-input w-full">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Copy Toast Notification inside modal -->
+                <div id="copy-toast" class="hidden mt-3 p-2 bg-emerald-600 text-white text-center text-xs font-bold rounded-lg">
+                    <i class="fa-solid fa-check"></i> Copiado para a Ã¡rea de transferÃªncia! Basta dar Ctrl+V no sistema do hotel.
+                </div>
+
+                <!-- Bottom Modal Action Buttons -->
+                <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
+                    <button onclick="window.print()" class="px-4 py-2 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 font-bold text-xs flex items-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-print text-teal-600"></i> Imprimir Ficha FNRH
+                    </button>
+                    <div class="flex items-center gap-2">
+                        <a id="pms-whatsapp-btn" href="#" target="_blank" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm">
+                            <i class="fa-brands fa-whatsapp"></i> Chamar HÃ³spede no WhatsApp
+                        </a>
+                        <button onclick="closePmsModal()" class="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs">
+                            Fechar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =========================================================================
+        // 0. CONFIGURAÃ‡ÃƒO DE URL BASE (GITHUB PAGES OU DOMÃNIO PRÃ“PRIO)
+        // =========================================================================
+        const FIXED_HOTEL_MODE = 'hit';
+
+        function getCurrentBaseUrl() {
+            if (window.location.protocol.startsWith('http')) {
+                return window.location.origin + window.location.pathname;
+            }
+            return 'https://seu-usuario.github.io/check-in-online/';
+        }
+        let currentSystemBaseUrl = getCurrentBaseUrl();
+
+        let isAdminAuthenticated = false;
+        let pendingAdminTargetView = 'admin';
+        let isStrictGuestMode = false;
+
+        // =========================================================================
+        // 1. CONFIGURAÃ‡ÃƒO DOS 3 HOTÃ‰IS (ROTEAMENTO POR QR CODE ?hotel=...)
+        // =========================================================================
+        const HOTELS_CONFIG = {
+            hit: {
+                id: 'hit',
+                name: 'Hit Hotel',
+                location: 'Salvador - Bahia, Brasil',
+                badge: 'Check-in Digital Oficial â€¢ Hit Hotel',
+                heroClass: 'relative bg-gradient-to-br from-teal-700 via-teal-800 to-slate-900 text-white pt-6 pb-16 px-4 transition-all duration-500 shadow-lg',
+                iconClass: 'fa-solid fa-umbrella-beach text-teal-300',
+                btnClass: 'w-full py-4 px-6 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-[0.99] text-white font-bold text-base shadow-lg shadow-teal-600/25 transition flex items-center justify-center gap-2',
+                wifiSsid: 'HitHotel_5G',
+                pillColor: 'bg-teal-100 text-teal-800 border-teal-300'
+            },
+            salvador: {
+                id: 'salvador',
+                name: 'Hotel Porto Salvador',
+                location: 'Salvador - Bahia, Brasil',
+                badge: 'Check-in Digital Oficial â€¢ Porto Salvador',
+                heroClass: 'relative bg-gradient-to-br from-blue-900 via-indigo-950 to-slate-900 text-white pt-6 pb-16 px-4 transition-all duration-500 shadow-lg',
+                iconClass: 'fa-solid fa-anchor text-amber-400',
+                btnClass: 'w-full py-4 px-6 rounded-xl bg-blue-900 hover:bg-blue-950 active:scale-[0.99] text-white font-bold text-base shadow-lg shadow-blue-900/25 transition flex items-center justify-center gap-2',
+                wifiSsid: 'PortoSalvador_Guest',
+                pillColor: 'bg-blue-100 text-blue-900 border-blue-300'
+            },
+            ancoras: {
+                id: 'ancoras',
+                name: 'Hotel Porto das Ã‚ncoras',
+                location: 'Porto Seguro - Bahia, Brasil',
+                badge: 'Check-in Digital Oficial â€¢ Porto das Ã‚ncoras',
+                heroClass: 'relative bg-gradient-to-br from-emerald-700 via-teal-900 to-slate-900 text-white pt-6 pb-16 px-4 transition-all duration-500 shadow-lg',
+                iconClass: 'fa-solid fa-water text-emerald-300',
+                btnClass: 'w-full py-4 px-6 rounded-xl bg-emerald-700 hover:bg-emerald-800 active:scale-[0.99] text-white font-bold text-base shadow-lg shadow-emerald-700/25 transition flex items-center justify-center gap-2',
+                wifiSsid: 'PortoDasAncoras_WiFi',
+                pillColor: 'bg-emerald-100 text-emerald-800 border-emerald-300'
+            }
+        };
+
+        let currentHotel = 'hit';
+        let currentLang = 'pt';
+        let currentOriginType = 'BR'; // 'BR' ou 'INT'
+
+        // =========================================================================
+        // 2. DICIONÃRIO MULTI-IDIOMAS (PT-BR, ES, EN, FR)
+        // =========================================================================
+        const I18N = {
+            pt: {
+                select_lang_label: 'Idioma / Language',
+                welcome_title: 'Bem-vindo(a)! Agilize sua entrada na recepÃ§Ã£o.',
+                welcome_desc: 'Preencha sua Ficha Nacional de Registro de HÃ³spedes (FNRH) em menos de 1 minuto pelo celular e receba sua chave muito mais rÃ¡pido.',
+                origin_type_question: '1. Selecione sua nacionalidade / documento de identificaÃ§Ã£o:',
+                btn_brazilian_title: 'Sou Brasileiro(a)',
+                btn_brazilian_sub: 'Cadastro com CPF e Cidade/UF',
+                btn_foreign_title: 'Sou Estrangeiro(a)',
+                btn_foreign_sub: 'Cadastro simplificado com Passaporte',
+                sec_personal_data: 'Dados Pessoais e Contato',
+                required_legend: 'ObrigatÃ³rio',
+                lbl_fullname: 'Nome Completo',
+                ph_fullname: 'Ex: Cinthia Aparecida Silva',
+                lbl_dob: 'Data de Nascimento',
+                lbl_phone: 'Telefone / WhatsApp (Com DDD/DDI)',
+                ph_phone: '(71) 99999-9999',
+                lbl_email: 'E-mail',
+                sec_documents: 'DocumentaÃ§Ã£o e Nacionalidade',
+                lbl_nationality: 'Nacionalidade',
+                lbl_cpf: 'CPF (ObrigatÃ³rio para Brasileiros)',
+                lbl_passport: 'NÃºmero do Passaporte',
+                ph_passport: 'Ex: AA1234567',
+                sec_origin_address: 'Local de Origem (Cidade / Estado)',
+                lbl_cep: 'CEP (Busca AutomÃ¡tica)',
+                lbl_uf: 'UF (Estado)',
+                lbl_city: 'Cidade',
+                lbl_country: 'PaÃ­s de ResidÃªncia',
+                lbl_address_opt: 'EndereÃ§o / Bairro',
+                lbl_optional: 'Opcional',
+                sec_stay_details: 'Detalhes da Estadia & Pesquisa RÃ¡pida',
+                lbl_channel: 'Como conheceu / reservou o hotel?',
+                lbl_purpose: 'Motivo da Viagem',
+                lbl_guests_count: 'Total de Pessoas no Quarto',
+                lbl_signature: 'Rubrica / Assinatura Digital na Tela (Opcional)',
+                btn_clear_sig: 'Limpar',
+                ph_signature: 'Assine aqui com o dedo ou mouse',
+                lbl_lgpd_terms: 'Confirmo que os dados informados sÃ£o verdadeiros para fins de registro oficial de hospedagem (FNRH) e concordo com a PolÃ­tica de Privacidade (LGPD).',
+                btn_submit_checkin: 'Confirmar Check-in Online',
+                success_title: 'Tudo pronto para sua chegada!',
+                success_subtitle: 'Seus dados jÃ¡ foram enviados para a recepÃ§Ã£o. Ao chegar no balcÃ£o, basta informar seu nome para retirar a chave.',
+                wifi_title: 'Wi-Fi Liberado na Chegada',
+                btn_new_checkin: 'Cadastrar Outro HÃ³spede / Acompanhante',
+                err_missing_fields: 'Por favor, preencha todos os campos obrigatÃ³rios destacados com (*) antes de confirmar.'
+            },
+            es: {
+                select_lang_label: 'Seleccione el Idioma',
+                welcome_title: 'Â¡Bienvenido(a)! Agilice su registro en recepciÃ³n.',
+                welcome_desc: 'Complete su formulario de check-in online en menos de 1 minuto desde su mÃ³vil y reciba la llave de su habitaciÃ³n sin filas.',
+                origin_type_question: '1. Seleccione su origen / documento de identificaciÃ³n:',
+                btn_brazilian_title: 'Soy BrasileÃ±o(a)',
+                btn_brazilian_sub: 'Registro con CPF y Ciudad/Estado',
+                btn_foreign_title: 'Soy Extranjero(a)',
+                btn_foreign_sub: 'Registro rÃ¡pido con Pasaporte',
+                sec_personal_data: 'Datos Personales y Contacto',
+                required_legend: 'Obligatorio',
+                lbl_fullname: 'Nombre Completo',
+                ph_fullname: 'Ej: Juan Carlos PÃ©rez',
+                lbl_dob: 'Fecha de Nacimiento',
+                lbl_phone: 'TelÃ©fono / WhatsApp (Con cÃ³digo de paÃ­s)',
+                ph_phone: '+54 9 11 1234-5678',
+                lbl_email: 'Correo ElectrÃ³nico (E-mail)',
+                sec_documents: 'DocumentaciÃ³n y Nacionalidad',
+                lbl_nationality: 'Nacionalidad',
+                lbl_cpf: 'CPF (Solo residentes en Brasil)',
+                lbl_passport: 'NÃºmero de Pasaporte',
+                ph_passport: 'Ej: AAB123456',
+                sec_origin_address: 'Lugar de Residencia (Ciudad / Estado)',
+                lbl_cep: 'CÃ³digo Postal (CEP)',
+                lbl_uf: 'Estado (UF)',
+                lbl_city: 'Ciudad',
+                lbl_country: 'PaÃ­s de Residencia',
+                lbl_address_opt: 'DirecciÃ³n',
+                lbl_optional: 'Opcional',
+                sec_stay_details: 'Detalles de la EstadÃ­a',
+                lbl_channel: 'Â¿CÃ³mo conociÃ³ o reservÃ³ el hotel?',
+                lbl_purpose: 'Motivo del Viaje',
+                lbl_guests_count: 'Cantidad de Personas en la HabitaciÃ³n',
+                lbl_signature: 'Firma Digital del HuÃ©sped (Opcional)',
+                btn_clear_sig: 'Borrar',
+                ph_signature: 'Firme aquÃ­ con el dedo o el cursor',
+                lbl_lgpd_terms: 'Confirmo que los datos informados son verdaderos para el registro oficial de hospedaje y acepto la PolÃ­tica de Privacidad.',
+                btn_submit_checkin: 'Confirmar Check-in Online',
+                success_title: 'Â¡Todo listo para su llegada!',
+                success_subtitle: 'Sus datos ya fueron enviados a la recepciÃ³n del hotel. Al llegar, solo indique su nombre para recibir su llave.',
+                wifi_title: 'Wi-Fi Gratis Disponible',
+                btn_new_checkin: 'Registrar Otro HuÃ©sped / AcompaÃ±ante',
+                err_missing_fields: 'Por favor complete todos los campos obligatorios marcados con (*) antes de continuar.'
+            },
+            en: {
+                select_lang_label: 'Choose Language',
+                welcome_title: 'Welcome! Speed up your front-desk check-in.',
+                welcome_desc: 'Fill out your digital guest registration form in under 1 minute on your phone and pick up your room key without waiting in line.',
+                origin_type_question: '1. Select your nationality / identification type:',
+                btn_brazilian_title: 'Brazilian Citizen',
+                btn_brazilian_sub: 'Register with Brazilian CPF & State',
+                btn_foreign_title: 'International Guest',
+                btn_foreign_sub: 'Express registration with Passport',
+                sec_personal_data: 'Personal & Contact Information',
+                required_legend: 'Required',
+                lbl_fullname: 'Full Name',
+                ph_fullname: 'e.g., John Michael Smith',
+                lbl_dob: 'Date of Birth',
+                lbl_phone: 'Mobile Phone / WhatsApp (with Country Code)',
+                ph_phone: '+1 (555) 234-5678',
+                lbl_email: 'E-mail Address',
+                sec_documents: 'Identification & Nationality',
+                lbl_nationality: 'Nationality / Country',
+                lbl_cpf: 'CPF ID (Brazil only)',
+                lbl_passport: 'Passport Number',
+                ph_passport: 'e.g., US98765432',
+                sec_origin_address: 'City & State of Origin',
+                lbl_cep: 'ZIP / Postal Code',
+                lbl_uf: 'State (UF)',
+                lbl_city: 'City',
+                lbl_country: 'Country of Residence',
+                lbl_address_opt: 'Street Address',
+                lbl_optional: 'Optional',
+                sec_stay_details: 'Stay Details & Quick Survey',
+                lbl_channel: 'How did you book / hear about us?',
+                lbl_purpose: 'Purpose of Trip',
+                lbl_guests_count: 'Guests in Room',
+                lbl_signature: 'Digital Guest Signature (Optional)',
+                btn_clear_sig: 'Clear',
+                ph_signature: 'Sign here with your finger or mouse',
+                lbl_lgpd_terms: 'I confirm that the information provided is accurate for official hotel registration purposes and agree to the Privacy Policy.',
+                btn_submit_checkin: 'Complete Online Check-in',
+                success_title: 'You are all set for arrival!',
+                success_subtitle: 'Your registration has been sent to our front desk. Upon arrival, simply give your name to pick up your key.',
+                wifi_title: 'Complimentary Hotel Wi-Fi',
+                btn_new_checkin: 'Register Another Guest',
+                err_missing_fields: 'Please fill out all required fields marked with (*) before submitting.'
+            },
+            fr: {
+                select_lang_label: 'Choisir la Langue',
+                welcome_title: 'Bienvenue ! AccÃ©lÃ©rez votre arrivÃ©e Ã  la rÃ©ception.',
+                welcome_desc: 'Remplissez votre fiche dâ€™enregistrement en ligne en moins dâ€™une minute sur votre tÃ©lÃ©phone et rÃ©cupÃ©rez votre clÃ© sans file dâ€™attente.',
+                origin_type_question: '1. SÃ©lectionnez votre origine / document dâ€™identitÃ© :',
+                btn_brazilian_title: 'Citoyen BrÃ©silien',
+                btn_brazilian_sub: 'Enregistrement avec CPF et Ã‰tat',
+                btn_foreign_title: 'Client International',
+                btn_foreign_sub: 'Enregistrement simplifiÃ© avec Passeport',
+                sec_personal_data: 'Informations Personnelles et Contact',
+                required_legend: 'Obligatoire',
+                lbl_fullname: 'Nom Complet',
+                ph_fullname: 'Ex: Marie Laurent',
+                lbl_dob: 'Date de Naissance',
+                lbl_phone: 'TÃ©lÃ©phone / WhatsApp (avec indicatif pays)',
+                ph_phone: '+33 6 12 34 56 78',
+                lbl_email: 'Adresse E-mail',
+                sec_documents: 'Documents et NationalitÃ©',
+                lbl_nationality: 'NationalitÃ©',
+                lbl_cpf: 'CPF (BrÃ©sil uniquement)',
+                lbl_passport: 'NumÃ©ro de Passeport',
+                ph_passport: 'Ex: 21AB54321',
+                sec_origin_address: 'Lieu de RÃ©sidence (Ville / Ã‰tat)',
+                lbl_cep: 'Code Postal',
+                lbl_uf: 'Ã‰tat (UF)',
+                lbl_city: 'Ville',
+                lbl_country: 'Pays de RÃ©sidence',
+                lbl_address_opt: 'Adresse',
+                lbl_optional: 'Optionnel',
+                sec_stay_details: 'DÃ©tails du SÃ©jour',
+                lbl_channel: 'Comment avez-vous rÃ©servÃ© lâ€™hÃ´tel ?',
+                lbl_purpose: 'Motif du Voyage',
+                lbl_guests_count: 'Nombre de Personnes',
+                lbl_signature: 'Signature NumÃ©rique (Optionnel)',
+                btn_clear_sig: 'Effacer',
+                ph_signature: 'Signez ici avec votre doigt ou la souris',
+                lbl_lgpd_terms: 'Je confirme lâ€™exactitude des informations fournies pour lâ€™enregistrement officiel de lâ€™hÃ´tel et jâ€™accepte la Politique de ConfidentialitÃ©.',
+                btn_submit_checkin: 'Confirmer le Check-in en Ligne',
+                success_title: 'Tout est prÃªt pour votre arrivÃ©e !',
+                success_subtitle: 'Vos informations ont Ã©tÃ© transmises Ã  la rÃ©ception. Ã€ votre arrivÃ©e, indiquez simplement votre nom pour rÃ©cupÃ©rer votre clÃ©.',
+                wifi_title: 'AccÃ¨s Wi-Fi Gratuit',
+                btn_new_checkin: 'Enregistrer un Autre Client',
+                err_missing_fields: 'Veuillez remplir tous les champs obligatoires marquÃ©s dâ€™un (*) avant de valider.'
+            }
+        };
+
+        // =========================================================================
+        // 3. BASE DE DADOS INICIAL (EXEMPLOS REAIS PARA ANÃLISE ESTRATÃ‰GICA + DADO DA IMAGEM)
+        // =========================================================================
+        let checkinsData = [
+            // Registro 1 idÃªntico Ã  imagem enviada pelo usuÃ¡rio
+            {
+                id: 'CHK-9001',
+                date: '2026-10-21',
+                time: '14:15',
+                hotel: 'hit',
+                originType: 'BR',
+                name: 'CINTHIA APARECIDA SILVA',
+                dob: '1988-05-14',
+                phone: '62981278027',
+                email: 'vfdsx@gmail.com',
+                nationality: 'BRASIL',
+                cpf: '078.740.616-32',
+                passport: '',
+                cep: '39825-000',
+                uf: 'MG',
+                city: 'LADAINHA',
+                country: 'BRASIL',
+                address: 'CENTRO',
+                channel: 'Booking.com',
+                purpose: 'Lazer / Turismo',
+                guestsCount: 2
+            },
+            {
+                id: 'CHK-9002',
+                date: '2026-10-21',
+                time: '14:40',
+                hotel: 'salvador',
+                originType: 'INT',
+                name: 'MATEO GONZALEZ FERNANDEZ',
+                dob: '1984-11-02',
+                phone: '+54 9 11 5432-8900',
+                email: 'mateo.gonzalez@gmail.com',
+                nationality: 'ARGENTINA',
+                cpf: '',
+                passport: 'AAG892341',
+                cep: '',
+                uf: 'EX',
+                city: 'BUENOS AIRES',
+                country: 'ARGENTINA',
+                address: '',
+                channel: 'Booking.com',
+                purpose: 'Lazer / Turismo',
+                guestsCount: 2
+            },
+            {
+                id: 'CHK-9003',
+                date: '2026-10-21',
+                time: '15:10',
+                hotel: 'ancoras',
+                originType: 'BR',
+                name: 'RODRIGO MENDES OLIVEIRA',
+                dob: '1979-03-22',
+                phone: '(31) 99241-1120',
+                email: 'rodrigo.mendes@empresa.com.br',
+                nationality: 'BRASIL',
+                cpf: '112.450.896-10',
+                passport: '',
+                cep: '30140-071',
+                uf: 'MG',
+                city: 'BELO HORIZONTE',
+                country: 'BRASIL',
+                address: 'SAVASSI',
+                channel: 'Reserva Direta / WhatsApp',
+                purpose: 'Lazer / Turismo',
+                guestsCount: 4
+            },
+            {
+                id: 'CHK-9004',
+                date: '2026-10-21',
+                time: '13:20',
+                hotel: 'hit',
+                originType: 'BR',
+                name: 'FERNANDA COSTA SANTOS',
+                dob: '1993-08-19',
+                phone: '(11) 98812-4500',
+                email: 'fernanda.costa@uol.com.br',
+                nationality: 'BRASIL',
+                cpf: '341.890.128-44',
+                passport: '',
+                cep: '04538-132',
+                uf: 'SP',
+                city: 'SAO PAULO',
+                country: 'BRASIL',
+                address: 'ITAIM BIBI',
+                channel: 'Instagram / Redes Sociais',
+                purpose: 'Lazer / Turismo',
+                guestsCount: 2
+            },
+            {
+                id: 'CHK-9005',
+                date: '2026-10-21',
+                time: '16:05',
+                hotel: 'salvador',
+                originType: 'INT',
+                name: 'SOPHIE MARIE DUBOIS',
+                dob: '1990-04-12',
+                phone: '+33 6 45 78 90 12',
+                email: 'sophie.dubois@orange.fr',
+                nationality: 'FRANÃ‡A',
+                cpf: '',
+                passport: '21FR99402',
+                cep: '',
+                uf: 'EX',
+                city: 'PARIS',
+                country: 'FRANÃ‡A',
+                address: '',
+                channel: 'Expedia / Decolar',
+                purpose: 'Lazer / Turismo',
+                guestsCount: 2
+            },
+            {
+                id: 'CHK-9006',
+                date: '2026-10-20',
+                time: '18:30',
+                hotel: 'salvador',
+                originType: 'BR',
+                name: 'MARCELO ALMEIDA LIMA',
+                dob: '1982-01-30',
+                phone: '(71) 99123-7788',
+                email: 'marcelo.lima@bahia.com.br',
+                nationality: 'BRASIL',
+                cpf: '854.123.905-00',
+                passport: '',
+                cep: '45653-000',
+                uf: 'BA',
+                city: 'FEIRA DE SANTANA',
+                country: 'BRASIL',
+                address: 'CENTRO',
+                channel: 'Empresa / Corporativo',
+                purpose: 'NegÃ³cios / Trabalho',
+                guestsCount: 1
+            },
+            {
+                id: 'CHK-9007',
+                date: '2026-10-20',
+                time: '14:50',
+                hotel: 'ancoras',
+                originType: 'BR',
+                name: 'JULIANA PEREIRA GOMES',
+                dob: '1987-12-05',
+                phone: '(33) 98411-3390',
+                email: 'julianapg@gmail.com',
+                nationality: 'BRASIL',
+                cpf: '092.654.321-88',
+                passport: '',
+                cep: '39800-000',
+                uf: 'MG',
+                city: 'TEOFILO OTONI',
+                country: 'BRASIL',
+                address: 'CENTRO',
+                channel: 'Reserva Direta / WhatsApp',
+                purpose: 'Lazer / Turismo',
+                guestsCount: 3
+            },
+            {
+                id: 'CHK-9008',
+                date: '2026-10-20',
+                time: '15:45',
+                hotel: 'hit',
+                originType: 'INT',
+                name: 'MICHAEL DAVID JOHNSON',
+                dob: '1976-07-04',
+                phone: '+1 305 555-0192',
+                email: 'mjohnson@miami.com',
+                nationality: 'ESTADOS UNIDOS',
+                cpf: '',
+                passport: 'US55892104',
+                cep: '',
+                uf: 'EX',
+                city: 'MIAMI',
+                country: 'ESTADOS UNIDOS',
+                address: '',
+                channel: 'Booking.com',
+                purpose: 'Lazer / Turismo',
+                guestsCount: 2
+            },
+            {
+                id: 'CHK-9009',
+                date: '2026-10-19',
+                time: '12:15',
+                hotel: 'hit',
+                originType: 'BR',
+                name: 'CARLOS EDUARDO ROCHA',
+                dob: '1991-09-18',
+                phone: '(11) 97654-3210',
+                email: 'carlos.rocha@gmail.com',
+                nationality: 'BRASIL',
+                cpf: '229.876.543-12',
+                passport: '',
+                cep: '13010-000',
+                uf: 'SP',
+                city: 'CAMPINAS',
+                country: 'BRASIL',
+                address: 'CAMBUI',
+                channel: 'Booking.com',
+                purpose: 'Evento / Congresso',
+                guestsCount: 1
+            },
+            {
+                id: 'CHK-9010',
+                date: '2026-10-19',
+                time: '14:05',
+                hotel: 'ancoras',
+                originType: 'BR',
+                name: 'PATRICIA RIBEIRO SOUZA',
+                dob: '1985-06-25',
+                phone: '(61) 99988-1122',
+                email: 'patricia.souza@df.gov.br',
+                nationality: 'BRASIL',
+                cpf: '711.223.344-55',
+                passport: '',
+                cep: '70040-010',
+                uf: 'DF',
+                city: 'BRASILIA',
+                country: 'BRASIL',
+                address: 'ASA SUL',
+                channel: 'AgÃªncia / Operadora',
+                purpose: 'Lazer / Turismo',
+                guestsCount: 3
+            },
+            {
+                id: 'CHK-9011',
+                date: '2026-10-18',
+                time: '17:20',
+                hotel: 'salvador',
+                originType: 'INT',
+                name: 'ALEJANDRO SILVA SUAREZ',
+                dob: '1980-02-11',
+                phone: '+598 99 123 456',
+                email: 'alejandro.uy@adinet.com.uy',
+                nationality: 'URUGUAI',
+                cpf: '',
+                passport: 'UY443920',
+                cep: '',
+                uf: 'EX',
+                city: 'MONTEVIDEO',
+                country: 'URUGUAI',
+                address: '',
+                channel: 'Booking.com',
+                purpose: 'Lazer / Turismo',
+                guestsCount: 2
+            },
+            {
+                id: 'CHK-9012',
+                date: '2026-10-18',
+                time: '14:30',
+                hotel: 'hit',
+                originType: 'BR',
+                name: 'GUSTAVO HENRIQUE MARTINS',
+                dob: '1995-11-09',
+                phone: '(21) 98765-4321',
+                email: 'gustavo.rj@hotmail.com',
+                nationality: 'BRASIL',
+                cpf: '145.678.901-23',
+                passport: '',
+                cep: '22041-001',
+                uf: 'RJ',
+                city: 'RIO DE JANEIRO',
+                country: 'BRASIL',
+                address: 'COPACABANA',
+                channel: 'Instagram / Redes Sociais',
+                purpose: 'Lazer / Turismo',
+                guestsCount: 2
+            },
+            {
+                id: 'CHK-9013',
+                date: '2026-10-17',
+                time: '15:00',
+                hotel: 'ancoras',
+                originType: 'BR',
+                name: 'LUCIANA TEIXEIRA CASTRO',
+                dob: '1978-04-03',
+                phone: '(62) 98111-2233',
+                email: 'luciana.go@gmail.com',
+                nationality: 'BRASIL',
+                cpf: '601.234.567-89',
+                passport: '',
+                cep: '74110-010',
+                uf: 'GO',
+                city: 'GOIANIA',
+                country: 'BRASIL',
+                address: 'SETOR OESTE',
+                channel: 'Reserva Direta / WhatsApp',
+                purpose: 'Lazer / Turismo',
+                guestsCount: 4
+            },
+            {
+                id: 'CHK-9014',
+                date: '2026-10-17',
+                time: '19:45',
+                hotel: 'salvador',
+                originType: 'INT',
+                name: 'CARLOS JAVIER MORALES',
+                dob: '1989-10-15',
+                phone: '+34 612 345 678',
+                email: 'cmorales@madrid.es',
+                nationality: 'ESPANHA',
+                cpf: '',
+                passport: 'ESP883920',
+                cep: '',
+                uf: 'EX',
+                city: 'MADRID',
+                country: 'ESPANHA',
+                address: '',
+                channel: 'Expedia / Decolar',
+                purpose: 'NegÃ³cios / Trabalho',
+                guestsCount: 1
+            }
+        ];
+
+        // =========================================================================
+        // 4. ROTEAMENTO POR QR CODE (?hotel=hit | salvador | ancoras) E TROCA DE TEMA
+        // =========================================================================
+        function switchHotel(hotelKey) {
+            if (!HOTELS_CONFIG[hotelKey]) hotelKey = 'hit';
+            currentHotel = hotelKey;
+            const cfg = HOTELS_CONFIG[hotelKey];
+
+            // Atualiza Hero e cores do formulÃ¡rio
+            document.getElementById('hotel-hero').className = cfg.heroClass;
+            document.getElementById('hotel-logo-icon').className = cfg.iconClass;
+            document.getElementById('hotel-title').textContent = cfg.name;
+            document.getElementById('hotel-location-text').textContent = cfg.location;
+            document.getElementById('hotel-badge-tag').textContent = cfg.badge;
+            document.getElementById('submit-checkin-btn').className = cfg.btnClass;
+
+            // Atualiza botÃµes da barra de simulaÃ§Ã£o superior
+            ['hit', 'salvador', 'ancoras'].forEach(k => {
+                const btn = document.getElementById('sim-btn-' + k);
+                if (!btn) return;
+                if (k === hotelKey) {
+                    btn.className = 'px-2.5 py-1 rounded-md font-bold transition flex items-center gap-1.5 bg-teal-500 text-slate-950 shadow';
+                } else {
+                    btn.className = 'px-2.5 py-1 rounded-md font-medium transition flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300';
+                }
+            });
+        }
+
+        // =========================================================================
+        // CONTROLE DE ACESSO COM SENHA ("master") & MODO HÃ“SPEDE ISOLADO
+        // =========================================================================
+        function setStrictGuestModeUI(enabled) {
+            isStrictGuestMode = enabled;
+            const topBar = document.getElementById('top-admin-bar');
+            const voucherAdminBtn = document.getElementById('voucher-admin-btn');
+
+            // Regra de Ouro: a barra administrativa SÃ“ pode aparecer se o usuÃ¡rio estiver autenticado!
+            if (enabled || !isAdminAuthenticated) {
+                if (topBar) topBar.classList.add('hidden');
+                if (voucherAdminBtn && isStrictGuestMode) voucherAdminBtn.classList.add('hidden');
+            } else {
+                if (topBar) topBar.classList.remove('hidden');
+                if (voucherAdminBtn) voucherAdminBtn.classList.remove('hidden');
+            }
+        }
+
+        // Permite Ã  recepÃ§Ã£o testar na hora a visÃ£o do hÃ³spede
+        function previewCleanGuestMode() {
+            switchMainView('guest');
+            const topBar = document.getElementById('top-admin-bar');
+            if (topBar) topBar.classList.add('hidden');
+            document.getElementById('guest-preview-notice').classList.remove('hidden');
+        }
+
+        function exitCleanGuestPreview() {
+            document.getElementById('guest-preview-notice').classList.add('hidden');
+            if (isAdminAuthenticated) {
+                const topBar = document.getElementById('top-admin-bar');
+                if (topBar) topBar.classList.remove('hidden');
+                switchMainView('admin');
+            } else {
+                requestAdminAccess('admin');
+            }
+        }
+
+        function simulateGuestQrScan(hotelKey) {
+            switchHotel(hotelKey);
+            previewCleanGuestMode();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function requestAdminAccess(targetView) {
+            if (isAdminAuthenticated) {
+                const topBar = document.getElementById('top-admin-bar');
+                if (topBar) topBar.classList.remove('hidden');
+                document.getElementById('guest-preview-notice').classList.add('hidden');
+                switchMainView(targetView || 'admin');
+                return;
+            }
+            pendingAdminTargetView = targetView || 'admin';
+            const modal = document.getElementById('password-modal');
+            const input = document.getElementById('admin-password-input');
+            const err = document.getElementById('password-error-msg');
+            err.classList.add('hidden');
+            input.value = '';
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => input.focus(), 80);
+        }
+
+        function closePasswordModal() {
+            const modal = document.getElementById('password-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function verifyAdminPassword(e) {
+            e.preventDefault();
+            const inputVal = (document.getElementById('admin-password-input').value || '').trim().toLowerCase();
+            if (inputVal === 'master') {
+                isAdminAuthenticated = true;
+                closePasswordModal();
+                
+                // Exibe a barra administrativa e remove notice de preview
+                const topBar = document.getElementById('top-admin-bar');
+                if (topBar) topBar.classList.remove('hidden');
+                document.getElementById('guest-preview-notice').classList.add('hidden');
+
+                // Atualiza Ã­cone e exibe botÃ£o de logout
+                const lockIcon = document.getElementById('admin-lock-icon');
+                if (lockIcon) lockIcon.className = 'fa-solid fa-chart-pie text-slate-950';
+                const logoutBtn = document.getElementById('btn-logout-admin');
+                if (logoutBtn) logoutBtn.classList.remove('hidden');
+
+                switchMainView(pendingAdminTargetView);
+            } else {
+                document.getElementById('password-error-msg').classList.remove('hidden');
+            }
+        }
+
+        function lockAdminSession() {
+            isAdminAuthenticated = false;
+            const topBar = document.getElementById('top-admin-bar');
+            if (topBar) topBar.classList.add('hidden');
+            
+            const lockIcon = document.getElementById('admin-lock-icon');
+            if (lockIcon) lockIcon.className = 'fa-solid fa-lock text-amber-400';
+            const logoutBtn = document.getElementById('btn-logout-admin');
+            if (logoutBtn) logoutBtn.classList.add('hidden');
+
+            document.getElementById('guest-preview-notice').classList.add('hidden');
+            switchMainView('guest');
+        }
+
+        // Troca entre VisÃ£o do HÃ³spede, Ãrea Admin e Plaquinhas QR Code
+        function switchMainView(viewName) {
+            if ((viewName === 'admin' || viewName === 'qrcodes') && !isAdminAuthenticated) {
+                requestAdminAccess(viewName);
+                return;
+            }
+
+            const views = ['guest', 'admin', 'qrcodes'];
+            views.forEach(v => {
+                const el = document.getElementById(v + '-view');
+                if (v === viewName) {
+                    el.classList.remove('hidden');
+                } else {
+                    el.classList.add('hidden');
+                }
+            });
+
+            // Se for admin autenticado, garante barra visÃ­vel
+            const topBar = document.getElementById('top-admin-bar');
+            if (topBar) {
+                if (isAdminAuthenticated) {
+                    topBar.classList.remove('hidden');
+                } else {
+                    topBar.classList.add('hidden');
+                }
+            }
+
+            // Atualiza botÃµes ativos no topo
+            document.getElementById('view-btn-guest').className = viewName === 'guest'
+                ? 'px-3 py-1.5 rounded-lg font-semibold bg-emerald-500 text-slate-950 shadow-sm flex items-center gap-1.5 transition'
+                : 'px-3 py-1.5 rounded-lg font-semibold bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 flex items-center gap-1.5 transition';
+
+            document.getElementById('view-btn-admin').className = viewName === 'admin'
+                ? 'px-3 py-1.5 rounded-lg font-semibold bg-amber-400 text-slate-950 shadow-sm flex items-center gap-1.5 transition'
+                : 'px-3 py-1.5 rounded-lg font-semibold bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 flex items-center gap-1.5 transition';
+
+            document.getElementById('view-btn-qrcodes').className = viewName === 'qrcodes'
+                ? 'px-3 py-1.5 rounded-lg font-semibold bg-cyan-400 text-slate-950 shadow-sm flex items-center gap-1.5 transition'
+                : 'px-3 py-1.5 rounded-lg font-semibold bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 flex items-center gap-1.5 transition';
+
+            if (viewName === 'admin') {
+                renderAdminDashboard();
+            } else if (viewName === 'qrcodes') {
+                regenerateAllQrCodes();
+            }
+        }
+
+        // =========================================================================
+        // GERAÃ‡ÃƒO DE QR CODES & CONFIGURAÃ‡ÃƒO AUTOMÃTICA GITHUB PAGES
+        // =========================================================================
+        function autoDetectCurrentBaseUrl() {
+            const detected = getCurrentBaseUrl();
+            const input = document.getElementById('qr-base-url-input');
+            if (input) input.value = detected;
+            applyBaseUrlToAll();
+        }
+
+        function applyBaseUrlToAll() {
+            const input = document.getElementById('qr-base-url-input');
+            let base = (input && input.value.trim()) ? input.value.trim() : getCurrentBaseUrl();
+            
+            // Remove parÃ¢metros anteriores ou barra final repetida se houver
+            base = base.split('?')[0].split('#')[0];
+
+            ['hit', 'salvador', 'ancoras'].forEach(k => {
+                const inputHotel = document.getElementById('qr-url-' + k);
+                if (inputHotel) {
+                    inputHotel.value = `${base}?hotel=${k}`;
+                }
+            });
+
+            regenerateAllQrCodes();
+        }
+
+        function regenerateAllQrCodes() {
+            const configs = [
+                { key: 'hit', color: '#0f766e' },
+                { key: 'salvador', color: '#1e3a8a' },
+                { key: 'ancoras', color: '#047857' }
+            ];
+
+            configs.forEach(({ key, color }) => {
+                const inputEl = document.getElementById('qr-url-' + key);
+                const labelEl = document.getElementById('qr-label-' + key);
+                const canvasEl = document.getElementById('qr-canvas-' + key);
+                if (!inputEl || !canvasEl) return;
+
+                const targetUrl = inputEl.value.trim() || `${getCurrentBaseUrl()}?hotel=${key}`;
+                if (labelEl) labelEl.textContent = targetUrl;
+
+                const openLinkEl = document.getElementById('qr-open-' + key);
+                if (openLinkEl) openLinkEl.href = targetUrl;
+
+                if (typeof QRious !== 'undefined') {
+                    new QRious({
+                        element: canvasEl,
+                        value: targetUrl,
+                        size: 240,
+                        level: 'H',
+                        foreground: color,
+                        background: '#ffffff'
+                    });
+                }
+            });
+        }
+
+        function downloadQrImage(canvasId, filename) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Permite copiar o cÃ³digo HTML jÃ¡ travado em um hotel especÃ­fico caso o Google Sites bloqueie parÃ¢metros de URL
+        function copyDedicatedHotelHtml(hotelKey) {
+            const currentFullHtml = document.documentElement.outerHTML;
+            const modifiedHtml = '<!DOCTYPE html>\n' + currentFullHtml.replace(
+                "const FIXED_HOTEL_MODE = 'hit';",
+                `const FIXED_HOTEL_MODE = '${hotelKey}';`
+            );
+
+            const textarea = document.createElement('textarea');
+            textarea.value = modifiedHtml;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+
+            const hotelName = HOTELS_CONFIG[hotelKey]?.name || hotelKey;
+            const toast = document.getElementById('qr-copy-feedback');
+            const toastText = document.getElementById('qr-copy-feedback-text');
+            toastText.textContent = `CÃ³digo HTML exclusivo do ${hotelName} (sem menus) copiado! Basta colar no Google Sites.`;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 4000);
+        }
+
+        // =========================================================================
+        // 5. SISTEMA DE IDIOMAS (PT, ES, EN, FR)
+        // =========================================================================
+        function setLanguage(lang) {
+            if (!I18N[lang]) lang = 'pt';
+            currentLang = lang;
+            const dict = I18N[lang];
+
+            // Atualiza botÃµes de idioma
+            ['pt', 'es', 'en', 'fr'].forEach(l => {
+                const btn = document.getElementById('lang-btn-' + l);
+                if (l === lang) {
+                    btn.className = 'px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 bg-white text-slate-900 shadow';
+                } else {
+                    btn.className = 'px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 text-white hover:bg-white/10';
+                }
+            });
+
+            // Traduz todos os elementos com data-i18n
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (dict[key]) el.textContent = dict[key];
+            });
+
+            // Traduz placeholders
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (dict[key]) el.setAttribute('placeholder', dict[key]);
+            });
+
+            // Se o hÃ³spede clicou em Espanhol, InglÃªs ou FrancÃªs, sugerimos automaticamente a aba "Estrangeiro"
+            if (lang !== 'pt' && currentOriginType === 'BR') {
+                setGuestOriginType('INT');
+                if (lang === 'es') document.getElementById('field-nationality').value = 'ARGENTINA';
+                if (lang === 'en') document.getElementById('field-nationality').value = 'ESTADOS UNIDOS';
+                if (lang === 'fr') document.getElementById('field-nationality').value = 'FRANÃ‡A';
+            }
+        }
+
+        // =========================================================================
+        // 6. REGRAS DE CAMPOS OBRIGATÃ“RIOS: BRASILEIRO vs ESTRANGEIRO
+        // =========================================================================
+        function setGuestOriginType(type) {
+            currentOriginType = type;
+            const btnBr = document.getElementById('btn-type-br');
+            const btnInt = document.getElementById('btn-type-int');
+            const iconBr = document.getElementById('check-icon-br');
+            const iconInt = document.getElementById('check-icon-int');
+
+            const wrapperCpf = document.getElementById('wrapper-cpf');
+            const wrapperPassport = document.getElementById('wrapper-passport');
+            const sectionBrAddress = document.getElementById('section-br-address');
+            const stepNumExtra = document.getElementById('step-num-extra');
+            const natSelect = document.getElementById('field-nationality');
+
+            if (type === 'BR') {
+                // Visual do Seletor
+                btnBr.className = 'flex items-center gap-3.5 p-3.5 rounded-xl border-2 border-teal-600 bg-teal-50/60 text-left transition shadow-sm';
+                btnInt.className = 'flex items-center gap-3.5 p-3.5 rounded-xl border-2 border-slate-200 hover:border-slate-300 bg-white text-left transition';
+                iconBr.className = 'fa-solid fa-circle-check text-teal-600 ml-auto text-lg';
+                iconInt.className = 'fa-regular fa-circle text-slate-300 ml-auto text-lg';
+
+                // Mostra CPF e EndereÃ§o (UF, Cidade, PaÃ­s) obrigatÃ³rios para brasileiros conforme imagem enviada
+                wrapperCpf.classList.remove('hidden');
+                wrapperPassport.classList.add('hidden');
+                sectionBrAddress.classList.remove('hidden');
+                stepNumExtra.textContent = '4';
+                natSelect.value = 'BRASIL';
+            } else {
+                // Visual do Seletor Estrangeiro
+                btnInt.className = 'flex items-center gap-3.5 p-3.5 rounded-xl border-2 border-teal-600 bg-teal-50/60 text-left transition shadow-sm';
+                btnBr.className = 'flex items-center gap-3.5 p-3.5 rounded-xl border-2 border-slate-200 hover:border-slate-300 bg-white text-left transition';
+                iconInt.className = 'fa-solid fa-circle-check text-teal-600 ml-auto text-lg';
+                iconBr.className = 'fa-regular fa-circle text-slate-300 ml-auto text-lg';
+
+                // Para estrangeiros: Nome, Telefone, E-mail, Nacionalidade, Data de Nascimento e Passaporte obrigatÃ³rios
+                wrapperCpf.classList.add('hidden');
+                wrapperPassport.classList.remove('hidden');
+                sectionBrAddress.classList.add('hidden');
+                stepNumExtra.textContent = '3';
+                if (natSelect.value === 'BRASIL') {
+                    natSelect.value = 'ARGENTINA';
+                }
+            }
+            document.getElementById('form-error-box').classList.add('hidden');
+        }
+
+        function handleNationalityChange(val) {
+            if (val === 'BRASIL' && currentOriginType !== 'BR') {
+                setGuestOriginType('BR');
+            } else if (val !== 'BRASIL' && currentOriginType === 'BR') {
+                setGuestOriginType('INT');
+            }
+        }
+
+        // =========================================================================
+        // 7. MÃSCARAS DE CPF, TELEFONE E BUSCA AUTOMÃTICA DE CEP (ViaCEP)
+        // =========================================================================
+        function handleCpfMask(input) {
+            let v = input.value.replace(/\D/g, '');
+            if (v.length > 11) v = v.slice(0, 11);
+            v = v.replace(/(\d{3})(\d)/, '$1.$2');
+            v = v.replace(/(\d{3})(\d)/, '$1.$2');
+            v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+            input.value = v;
+        }
+
+        function handlePhoneMask(input) {
+            if (currentOriginType === 'BR') {
+                let v = input.value.replace(/\D/g, '');
+                if (v.length > 11) v = v.slice(0, 11);
+                if (v.length > 2) v = '(' + v.substring(0, 2) + ') ' + v.substring(2);
+                if (v.length > 10) v = v.substring(0, 10) + '-' + v.substring(10);
+                input.value = v;
+            }
+        }
+
+        async function handleCepLookup(input) {
+            let cep = input.value.replace(/\D/g, '');
+            if (cep.length > 5) {
+                input.value = cep.substring(0, 5) + '-' + cep.substring(5, 8);
+            }
+            if (cep.length === 8) {
+                const loader = document.getElementById('cep-loading');
+                loader.classList.remove('hidden');
+                try {
+                    const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+                    const data = await res.json();
+                    if (!data.erro) {
+                        document.getElementById('field-uf').value = data.uf || '';
+                        document.getElementById('field-city').value = (data.localidade || '').toUpperCase();
+                        document.getElementById('field-address').value = `${data.logradouro || ''} ${data.bairro || ''}`.trim().toUpperCase();
+                    }
+                } catch (e) {
+                    // Silencioso caso offline
+                } finally {
+                    loader.classList.add('hidden');
+                }
+            }
+        }
+
+        // =========================================================================
+        // 8. SUBMISSÃƒO DO CHECK-IN COM VALIDAÃ‡ÃƒO DAS REGRAS BR vs ESTRANGEIRO
+        // =========================================================================
+        function handleCheckinSubmit(e) {
+            e.preventDefault();
+            const errorBox = document.getElementById('form-error-box');
+            const errorText = document.getElementById('form-error-text');
+            errorBox.classList.add('hidden');
+
+            const name = document.getElementById('field-name').value.trim().toUpperCase();
+            const dob = document.getElementById('field-dob').value;
+            const phone = document.getElementById('field-phone').value.trim();
+            const email = document.getElementById('field-email').value.trim().toLowerCase();
+            const nationality = document.getElementById('field-nationality').value;
+            const cpf = document.getElementById('field-cpf').value.trim();
+            const passport = document.getElementById('field-passport').value.trim().toUpperCase();
+            const cep = document.getElementById('field-cep').value.trim();
+            const uf = document.getElementById('field-uf').value;
+            const city = document.getElementById('field-city').value.trim().toUpperCase();
+            const country = document.getElementById('field-country').value.trim().toUpperCase();
+            const address = document.getElementById('field-address').value.trim().toUpperCase();
+            const channel = document.getElementById('field-channel').value;
+            const purpose = document.getElementById('field-purpose').value;
+            const guestsCount = parseInt(document.getElementById('field-guests-count').value, 10) || 1;
+
+            // ValidaÃ§Ã£o Comum (Nome, Data de Nascimento, Telefone, E-mail, Nacionalidade)
+            if (!name || !dob || !phone || !email || !nationality) {
+                errorText.textContent = I18N[currentLang].err_missing_fields;
+                errorBox.classList.remove('hidden');
+                return;
+            }
+
+            // ValidaÃ§Ã£o EspecÃ­fica: HÃ³spede Brasileiro (Conforme campos preenchidos na imagem do PMS)
+            if (currentOriginType === 'BR') {
+                if (!cpf || cpf.length < 11 || !uf || !city || !country) {
+                    errorText.textContent = 'Para hÃ³spedes brasileiros, Ã© obrigatÃ³rio preencher Nome, Data de Nascimento, Telefone, E-mail, CPF, Estado (UF) e Cidade.';
+                    errorBox.classList.remove('hidden');
+                    return;
+                }
+            } else {
+                // ValidaÃ§Ã£o EspecÃ­fica: HÃ³spede Estrangeiro
+                if (!passport) {
+                    errorText.textContent = I18N[currentLang].err_missing_fields + ' (Passport Number)';
+                    errorBox.classList.remove('hidden');
+                    return;
+                }
+            }
+
+            // Cria registro com data e hora atuais
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            const timeStr = now.toTimeString().substring(0, 5);
+            const protocolId = 'CHK-' + Math.floor(1000 + Math.random() * 9000);
+
+            const newRecord = {
+                id: protocolId,
+                date: dateStr,
+                time: timeStr,
+                hotel: currentHotel,
+                originType: currentOriginType,
+                name,
+                dob,
+                phone,
+                email,
+                nationality,
+                cpf: currentOriginType === 'BR' ? cpf : '',
+                passport: currentOriginType === 'INT' ? passport : '',
+                cep: currentOriginType === 'BR' ? cep : '',
+                uf: currentOriginType === 'BR' ? uf : 'EX',
+                city: currentOriginType === 'BR' ? city : nationality,
+                country: currentOriginType === 'BR' ? 'BRASIL' : nationality,
+                address,
+                channel,
+                purpose,
+                guestsCount
+            };
+
+            // Salva no topo da lista para aparecer imediatamente nos relatÃ³rios
+            checkinsData.unshift(newRecord);
+            document.getElementById('badge-total-checkins').textContent = checkinsData.length;
+
+            // Mostra tela de sucesso (Voucher Digital)
+            const cfg = HOTELS_CONFIG[currentHotel];
+            document.getElementById('voucher-hotel-name').textContent = cfg.name;
+            document.getElementById('voucher-protocol').textContent = '#' + protocolId;
+            document.getElementById('voucher-guest-name').textContent = name;
+            document.getElementById('voucher-guest-doc').textContent = currentOriginType === 'BR'
+                ? `CPF: ${cpf} â€¢ ${city}/${uf}`
+                : `PASS: ${passport} â€¢ ${nationality}`;
+            document.getElementById('voucher-wifi-ssid').textContent = cfg.wifiSsid;
+
+            document.getElementById('checkin-form-container').classList.add('hidden');
+            document.getElementById('checkin-success-container').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetCheckinForm() {
+            document.getElementById('guestCheckinForm').reset();
+            clearSignature();
+            setGuestOriginType('BR');
+            document.getElementById('checkin-success-container').classList.add('hidden');
+            document.getElementById('checkin-form-container').classList.remove('hidden');
+        }
+
+        // =========================================================================
+        // 9. CANVAS DE ASSINATURA DIGITAL NA TELA
+        // =========================================================================
+        let sigCanvas, sigCtx, isDrawing = false;
+
+        function initSignatureCanvas() {
+            sigCanvas = document.getElementById('signatureCanvas');
+            if (!sigCanvas) return;
+            sigCtx = sigCanvas.getContext('2d');
+
+            const resizeCanvas = () => {
+                const rect = sigCanvas.parentElement.getBoundingClientRect();
+                sigCanvas.width = rect.width || 500;
+                sigCanvas.height = rect.height || 112;
+                sigCtx.strokeStyle = '#0f172a';
+                sigCtx.lineWidth = 2;
+                sigCtx.lineCap = 'round';
+            };
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            const getPos = (e) => {
+                const rect = sigCanvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return { x: clientX - rect.left, y: clientY - rect.top };
+            };
+
+            const startDraw = (e) => {
+                isDrawing = true;
+                document.getElementById('sig-placeholder').classList.add('hidden');
+                const pos = getPos(e);
+                sigCtx.beginPath();
+                sigCtx.moveTo(pos.x, pos.y);
+            };
+
+            const moveDraw = (e) => {
+                if (!isDrawing) return;
+                e.preventDefault();
+                const pos = getPos(e);
+                sigCtx.lineTo(pos.x, pos.y);
+                sigCtx.stroke();
+            };
+
+            const endDraw = () => { isDrawing = false; };
+
+            sigCanvas.addEventListener('mousedown', startDraw);
+            sigCanvas.addEventListener('mousemove', moveDraw);
+            window.addEventListener('mouseup', endDraw);
+
+            sigCanvas.addEventListener('touchstart', startDraw, { passive: false });
+            sigCanvas.addEventListener('touchmove', moveDraw, { passive: false });
+            window.addEventListener('touchend', endDraw);
+        }
+
+        function clearSignature() {
+            if (!sigCtx || !sigCanvas) return;
+            sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+            document.getElementById('sig-placeholder').classList.remove('hidden');
+        }
+
+        // =========================================================================
+        // 10. PAINEL ADMINISTRATIVO, GRÃFICOS BI & TABELA OPERACIONAL
+        // =========================================================================
+        let chartStatesInstance = null;
+        let chartCountriesInstance = null;
+        let chartChannelsInstance = null;
+        let chartHoursInstance = null;
+
+        function getFilteredCheckins() {
+            const hotelFilter = document.getElementById('admin-filter-hotel').value;
+            const originFilter = document.getElementById('admin-filter-origin').value;
+            const periodFilter = document.getElementById('admin-filter-period').value;
+            const searchQuery = (document.getElementById('admin-search-input').value || '').toLowerCase();
+            const todayStr = '2026-10-21';
+
+            return checkinsData.filter(item => {
+                if (hotelFilter !== 'ALL' && item.hotel !== hotelFilter) return false;
+                if (originFilter !== 'ALL' && item.originType !== originFilter) return false;
+                if (periodFilter === 'TODAY' && item.date !== todayStr) return false;
+                if (searchQuery) {
+                    const hay = `${item.name} ${item.cpf} ${item.passport} ${item.city} ${item.uf} ${item.nationality} ${item.email}`.toLowerCase();
+                    if (!hay.includes(searchQuery)) return false;
+                }
+                return true;
+            });
+        }
+
+        function renderAdminDashboard() {
+            const filtered = getFilteredCheckins();
+            document.getElementById('badge-total-checkins').textContent = checkinsData.length;
+
+            // 1. Atualiza KPIs
+            document.getElementById('kpi-total').textContent = filtered.length;
+
+            // Contagem por UF (Brasil)
+            const ufCounts = {};
+            const countryCounts = {};
+            const channelCounts = {};
+            const cityCounts = {};
+            const purposeCounts = {};
+            let foreignCount = 0;
+
+            filtered.forEach(item => {
+                countryCounts[item.nationality] = (countryCounts[item.nationality] || 0) + 1;
+                channelCounts[item.channel] = (channelCounts[item.channel] || 0) + 1;
+                purposeCounts[item.purpose] = (purposeCounts[item.purpose] || 0) + 1;
+
+                if (item.originType === 'BR') {
+                    ufCounts[item.uf] = (ufCounts[item.uf] || 0) + 1;
+                    const cityLabel = `${item.city} (${item.uf})`;
+                    cityCounts[cityLabel] = (cityCounts[cityLabel] || 0) + 1;
+                } else {
+                    foreignCount++;
+                    const intCityLabel = `${item.city} (${item.nationality})`;
+                    cityCounts[intCityLabel] = (cityCounts[intCityLabel] || 0) + 1;
+                }
+            });
+
+            const topUF = Object.entries(ufCounts).sort((a, b) => b[1] - a[1])[0];
+            document.getElementById('kpi-top-state').textContent = topUF ? `${topUF[0]} (${topUF[1]} check-ins)` : 'N/A';
+
+            const foreignPct = filtered.length > 0 ? ((foreignCount / filtered.length) * 100).toFixed(1) : '0.0';
+            document.getElementById('kpi-foreign-pct').textContent = `${foreignPct}%`;
+
+            const intCountries = Object.entries(countryCounts).filter(c => c[0] !== 'BRASIL').sort((a, b) => b[1] - a[1]);
+            document.getElementById('kpi-top-country').textContent = intCountries.length > 0
+                ? `Top Exterior: ${intCountries[0][0]} (${intCountries[0][1]})`
+                : 'Apenas hÃ³spedes nacionais no filtro';
+
+            const topChannel = Object.entries(channelCounts).sort((a, b) => b[1] - a[1])[0];
+            document.getElementById('kpi-top-channel').textContent = topChannel
+                ? `Canal LÃ­der: ${topChannel[0]}`
+                : 'Sem dados';
+
+            // Insight EstratÃ©gico AutomÃ¡tico
+            const topPurpose = Object.entries(purposeCounts).sort((a, b) => b[1] - a[1])[0];
+            if (topPurpose) {
+                document.getElementById('predominant-purpose-badge').textContent = topPurpose[0];
+            }
+
+            const insightEl = document.getElementById('strategic-ai-insight');
+            if (filtered.length > 0) {
+                const bestStateTxt = topUF ? `o estado lÃ­der de emissÃ£o nacional Ã© <strong>${topUF[0]}</strong>` : 'hÃ¡ forte presenÃ§a internacional';
+                const bestIntTxt = intCountries[0] ? `No mercado internacional, <strong>${intCountries[0][0]}</strong> lidera as chegadas.` : '';
+                insightEl.innerHTML = `Nos registros selecionados, ${bestStateTxt}. ${bestIntTxt} O canal <strong>${topChannel ? topChannel[0] : 'Direto'}</strong> concentra a maior fatia das reservas. <strong>SugestÃ£o:</strong> OfereÃ§a cupom de retorno via WhatsApp no check-out para converter clientes de OTAs em reservas diretas nas unidades Hit Hotel, Porto Salvador e Porto das Ã‚ncoras.`;
+            } else {
+                insightEl.textContent = 'Nenhum registro encontrado para os filtros selecionados.';
+            }
+
+            // Renderiza Top Cidades
+            const topCitiesContainer = document.getElementById('top-cities-list');
+            const sortedCities = Object.entries(cityCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+            topCitiesContainer.innerHTML = sortedCities.map(([city, count], idx) => {
+                const pct = Math.round((count / Math.max(filtered.length, 1)) * 100);
+                return `
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="font-bold text-slate-700">${idx + 1}. ${city}</span>
+                            <span class="font-semibold text-slate-500">${count} hÃ³spede(s) (${pct}%)</span>
+                        </div>
+                        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                            <div class="bg-teal-600 h-full rounded-full" style="width: ${pct}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('') || '<p class="text-xs text-slate-400">Sem dados para exibir.</p>';
+
+            // Renderiza GrÃ¡ficos Chart.js
+            renderCharts(ufCounts, countryCounts, channelCounts, filtered);
+
+            // Renderiza Tabela de Check-ins
+            renderTable(filtered);
+        }
+
+        function renderCharts(ufCounts, countryCounts, channelCounts, filtered) {
+            // 1. GrÃ¡fico de Estados (UF)
+            const sortedUFs = Object.entries(ufCounts).sort((a, b) => b[1] - a[1]);
+            const ctxUF = document.getElementById('chartStatesUF').getContext('2d');
+            if (chartStatesInstance) chartStatesInstance.destroy();
+            chartStatesInstance = new Chart(ctxUF, {
+                type: 'bar',
+                data: {
+                    labels: sortedUFs.map(i => `Estado ${i[0]}`),
+                    datasets: [{
+                        label: 'HÃ³spedes por UF',
+                        data: sortedUFs.map(i => i[1]),
+                        backgroundColor: ['#0d9488', '#0284c7', '#4f46e5', '#059669', '#d97706', '#e11d48'],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+
+            // 2. GrÃ¡fico de PaÃ­ses / Nacionalidades
+            const sortedCountries = Object.entries(countryCounts).sort((a, b) => b[1] - a[1]);
+            const ctxCountry = document.getElementById('chartCountries').getContext('2d');
+            if (chartCountriesInstance) chartCountriesInstance.destroy();
+            chartCountriesInstance = new Chart(ctxCountry, {
+                type: 'doughnut',
+                data: {
+                    labels: sortedCountries.map(i => i[0]),
+                    datasets: [{
+                        data: sortedCountries.map(i => i[1]),
+                        backgroundColor: ['#10b981', '#3b82f6', '#6366f1', '#f59e0b', '#ec4899', '#8b5cf6', '#14b8a6']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } }
+                    }
+                }
+            });
+
+            // 3. GrÃ¡fico de Canais ("Como conheceu o hotel")
+            const sortedChannels = Object.entries(channelCounts).sort((a, b) => b[1] - a[1]);
+            const ctxChannel = document.getElementById('chartChannels').getContext('2d');
+            if (chartChannelsInstance) chartChannelsInstance.destroy();
+            chartChannelsInstance = new Chart(ctxChannel, {
+                type: 'bar',
+                data: {
+                    labels: sortedChannels.map(i => i[0]),
+                    datasets: [{
+                        label: 'Check-ins',
+                        data: sortedChannels.map(i => i[1]),
+                        backgroundColor: '#f59e0b',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+
+            // 4. GrÃ¡fico de HorÃ¡rios de Pico
+            const hourBuckets = { '12h-13h': 0, '14h-15h': 0, '16h-17h': 0, '18h+': 0 };
+            filtered.forEach(item => {
+                const hr = parseInt((item.time || '14:00').split(':')[0], 10);
+                if (hr <= 13) hourBuckets['12h-13h']++;
+                else if (hr <= 15) hourBuckets['14h-15h']++;
+                else if (hr <= 17) hourBuckets['16h-17h']++;
+                else hourBuckets['18h+']++;
+            });
+
+            const ctxHours = document.getElementById('chartHours').getContext('2d');
+            if (chartHoursInstance) chartHoursInstance.destroy();
+            chartHoursInstance = new Chart(ctxHours, {
+                type: 'line',
+                data: {
+                    labels: Object.keys(hourBuckets),
+                    datasets: [{
+                        label: 'Fluxo de Check-ins',
+                        data: Object.values(hourBuckets),
+                        borderColor: '#0d9488',
+                        backgroundColor: 'rgba(13, 148, 136, 0.15)',
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+        }
+
+        function formatDateBR(isoDate) {
+            if (!isoDate) return '';
+            const parts = isoDate.split('-');
+            if (parts.length !== 3) return isoDate;
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+
+        function renderTable(list) {
+            const tbody = document.getElementById('admin-checkins-tbody');
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-slate-400">Nenhum check-in encontrado para os filtros aplicados.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = list.map(item => {
+                const hCfg = HOTELS_CONFIG[item.hotel] || HOTELS_CONFIG.hit;
+                const docBadge = item.originType === 'BR'
+                    ? `<span class="font-mono text-slate-700">CPF: ${item.cpf}</span>`
+                    : `<span class="font-mono text-indigo-700 font-semibold">PASS: ${item.passport}</span>`;
+                const flagIcon = item.originType === 'BR' ? 'ðŸ‡§ðŸ‡·' : 'ðŸŒ';
+
+                return `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="py-3 px-4 whitespace-nowrap">
+                            <div class="font-bold text-slate-800">${formatDateBR(item.date)}</div>
+                            <div class="text-[11px] text-slate-500"><i class="fa-regular fa-clock"></i> ${item.time} â€¢ <span class="font-mono">${item.id}</span></div>
+                        </td>
+                        <td class="py-3 px-4 whitespace-nowrap">
+                            <span class="px-2.5 py-1 rounded-full text-[11px] font-bold border ${hCfg.pillColor}">
+                                ${hCfg.name}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4">
+                            <div class="font-bold text-slate-900">${item.name}</div>
+                            <div class="text-[11px] text-slate-500">Nasc: ${formatDateBR(item.dob)}</div>
+                        </td>
+                        <td class="py-3 px-4 whitespace-nowrap">
+                            <div class="font-bold text-slate-800">${flagIcon} ${item.nationality}</div>
+                            <div class="text-[11px]">${docBadge}</div>
+                        </td>
+                        <td class="py-3 px-4">
+                            <div class="font-bold text-slate-800">${item.city} ${item.uf !== 'EX' ? '- ' + item.uf : ''}</div>
+                            <div class="text-[11px] text-slate-500">PaÃ­s: ${item.country}</div>
+                        </td>
+                        <td class="py-3 px-4 whitespace-nowrap">
+                            <div class="font-medium text-slate-800">${item.phone}</div>
+                            <div class="text-[11px] text-slate-500">${item.email}</div>
+                        </td>
+                        <td class="py-3 px-4 whitespace-nowrap">
+                            <div class="font-semibold text-slate-700">${item.channel}</div>
+                            <div class="text-[11px] text-slate-500">${item.purpose}</div>
+                        </td>
+                        <td class="py-3 px-4 text-right whitespace-nowrap">
+                            <button onclick="openPmsModal('${item.id}')" class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-teal-700 text-white font-bold text-[11px] transition inline-flex items-center gap-1.5 shadow-sm">
+                                <i class="fa-solid fa-copy text-amber-300"></i> Espelho PMS
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // =========================================================================
+        // 11. MODAL "ESPELHO DO PMS" (REPLICA A TELA ENVIADA NA IMAGEM)
+        // =========================================================================
+        function openPmsModal(checkinId) {
+            const item = checkinsData.find(c => c.id === checkinId);
+            if (!item) return;
+
+            document.getElementById('pms-nome').value = item.name;
+            document.getElementById('pms-dob').value = formatDateBR(item.dob);
+            document.getElementById('pms-fone').value = item.phone.replace(/\D/g, '');
+            document.getElementById('pms-nacionalidade').value = item.nationality;
+            document.getElementById('pms-email').value = item.email;
+            document.getElementById('pms-canal').value = item.channel;
+            document.getElementById('pms-cpf').value = item.cpf;
+            document.getElementById('pms-passaporte').value = item.passport;
+            document.getElementById('pms-cep').value = item.cep || '-';
+            document.getElementById('pms-uf').value = item.uf === 'EX' ? '' : item.uf;
+            document.getElementById('pms-cidade').value = item.city;
+            document.getElementById('pms-pais').value = item.country;
+            document.getElementById('pms-endereco').value = item.address || '';
+
+            const cleanPhone = item.phone.replace(/\D/g, '');
+            document.getElementById('pms-whatsapp-btn').href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent('OlÃ¡ ' + item.name + ', confirmamos o recebimento do seu Check-in Online!')}`;
+
+            const modal = document.getElementById('pms-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closePmsModal() {
+            const modal = document.getElementById('pms-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function copyField(inputId) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            input.select();
+            document.execCommand('copy');
+
+            const toast = document.getElementById('copy-toast');
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 2500);
+        }
+
+        // =========================================================================
+        // 12. EXPORTAÃ‡ÃƒO DE RELATÃ“RIO PARA EXCEL / CSV
+        // =========================================================================
+        function exportCheckinsToCSV() {
+            const rows = getFilteredCheckins();
+            const headers = ['Protocolo', 'Data', 'Horario', 'Hotel', 'Tipo', 'Nome', 'Data_Nascimento', 'Telefone', 'Email', 'Nacionalidade', 'CPF', 'Passaporte', 'CEP', 'UF', 'Cidade', 'Pais', 'Canal_Reserva', 'Motivo_Viagem'];
+            const csvContent = [
+                headers.join(';'),
+                ...rows.map(r => [
+                    r.id,
+                    formatDateBR(r.date),
+                    r.time,
+                    HOTELS_CONFIG[r.hotel]?.name || r.hotel,
+                    r.originType,
+                    `"${r.name}"`,
+                    formatDateBR(r.dob),
+                    `"${r.phone}"`,
+                    r.email,
+                    r.nationality,
+                    r.cpf,
+                    r.passport,
+                    r.cep,
+                    r.uf,
+                    `"${r.city}"`,
+                    r.country,
+                    `"${r.channel}"`,
+                    `"${r.purpose}"`
+                ].join(';'))
+            ].join('\n');
+
+            const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `relatorio_checkins_hoteis_${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // =========================================================================
+        // INICIALIZAÃ‡ÃƒO AUTOMÃTICA (LÃŠ O PARÃ‚METRO ?hotel= DO QR CODE)
+        // =========================================================================
+        // INICIALIZAÃ‡ÃƒO AUTOMÃTICA (COMPATÃVEL COM GOOGLE SITES & MODO HÃ“SPEDE)
+        // =========================================================================
+        function detectHotelFromEnvironment() {
+            // 1. Verifica se este HTML foi gerado especificamente para 1 hotel fixo
+            if (FIXED_HOTEL_MODE && FIXED_HOTEL_MODE !== 'ALL' && HOTELS_CONFIG[FIXED_HOTEL_MODE]) {
+                return { hotel: FIXED_HOTEL_MODE, isLockedGuest: true };
+            }
+
+            // 2. Verifica parÃ¢metros na URL atual (?hotel=hit), Hash (#hit) ou URL mÃ£e do Google Sites (document.referrer)
+            const sourcesToCheck = [
+                window.location.search || '',
+                window.location.hash || '',
+                window.location.href || '',
+                document.referrer || ''
+            ].join(' ').toLowerCase();
+
+            // Procura ?hotel=hit, &hotel=hit, #hit, /hit
+            for (const key of ['hit', 'salvador', 'ancoras']) {
+                if (
+                    sourcesToCheck.includes(`hotel=${key}`) ||
+                    sourcesToCheck.includes(`#${key}`) ||
+                    sourcesToCheck.includes(`/${key}`)
+                ) {
+                    return { hotel: key, isLockedGuest: true };
+                }
+            }
+
+            // 3. Caso contrÃ¡rio, abriu pelo Link Principal
+            return { hotel: 'hit', isLockedGuest: false };
+        }
+
+        window.onload = function () {
+            document.getElementById('badge-total-checkins').textContent = checkinsData.length;
+
+            const detected = detectHotelFromEnvironment();
+            switchHotel(detected.hotel);
+
+            // REGRA: A barra administrativa e as opÃ§Ãµes gerenciais ficam 100% OCULTAS ao carregar.
+            // Elas sÃ³ sÃ£o liberadas para quem autenticar com a senha 'master' no 'Acesso RecepÃ§Ã£o'!
+            isAdminAuthenticated = false;
+            setStrictGuestModeUI(true);
+
+            const params = new URLSearchParams(window.location.search);
+            const langParam = (params.get('lang') || 'pt').toLowerCase();
+            if (I18N[langParam]) {
+                setLanguage(langParam);
+            }
+
+            initSignatureCanvas();
+
+            const baseInput = document.getElementById('qr-base-url-input');
+            if (baseInput) {
+                baseInput.value = getCurrentBaseUrl();
+            }
+            applyBaseUrlToAll();
+        };
+    </script>
+</body>
+</html>
+
