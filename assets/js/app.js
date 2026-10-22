@@ -436,9 +436,10 @@ function handleCheckinSubmit(e) {
         }
     }
 
+    // Cria registro com data e hora locais atuais (fuso horário local Brasil)
     const now = new Date();
-    const dateStr = now.toISOString().split('T')[0];
-    const timeStr = now.toTimeString().substring(0, 5);
+    const dateStr = getLocalDateString(now);
+    const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
     const protocolId = 'CHK-' + Math.floor(1000 + Math.random() * 9000);
 
     const newRecord = {
@@ -553,17 +554,95 @@ function clearSignature() {
 // =========================================================================
 // 9. DASHBOARD DE BI & TABELA OPERACIONAL
 // =========================================================================
+// Retorna a data atual no formato YYYY-MM-DD usando o fuso horário local do navegador
+function getLocalDateString(dateObj = new Date()) {
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+// Converte qualquer formato de data (DD/MM/YYYY, ISO, Date string) para YYYY-MM-DD
+function normalizeToIsoDate(dateStr) {
+    if (!dateStr) return '';
+    const s = String(dateStr).trim();
+    if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}/.test(s)) {
+        const parts = s.split(/[\/\-]/);
+        const day = parts[0].padStart(2, '0');
+        const month = parts[1].padStart(2, '0');
+        const year = parts[2].substring(0, 4);
+        return `${year}-${month}-${day}`;
+    }
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+        return s.substring(0, 10);
+    }
+    const parsed = new Date(s);
+    if (!isNaN(parsed.getTime())) {
+        return getLocalDateString(parsed);
+    }
+    return s;
+}
+
+// Alterna a exibição dos seletores de dia específico e intervalo
+function handlePeriodFilterChange() {
+    const period = document.getElementById('admin-filter-period').value;
+    const singleWrap = document.getElementById('wrapper-filter-single-date');
+    const startWrap = document.getElementById('wrapper-filter-range-start');
+    const endWrap = document.getElementById('wrapper-filter-range-end');
+
+    if (singleWrap) singleWrap.classList.toggle('hidden', period !== 'SPECIFIC_DAY');
+    if (startWrap) startWrap.classList.toggle('hidden', period !== 'RANGE');
+    if (endWrap) endWrap.classList.toggle('hidden', period !== 'RANGE');
+
+    renderAdminDashboard();
+}
+
 function getFilteredCheckins() {
     const hotelFilter = document.getElementById('admin-filter-hotel').value;
     const originFilter = document.getElementById('admin-filter-origin').value;
     const periodFilter = document.getElementById('admin-filter-period').value;
     const searchQuery = (document.getElementById('admin-search-input').value || '').toLowerCase();
-    const todayStr = '2026-10-21';
+
+    // Datas de referência calculadas dinamicamente com base no relógio de hoje
+    const today = getLocalDateString(new Date());
+
+    const yesterdayDate = new Date();
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterday = getLocalDateString(yesterdayDate);
+
+    const singleDate = document.getElementById('admin-filter-single-date')?.value || today;
+    const startDate = document.getElementById('admin-filter-start-date')?.value || '';
+    const endDate = document.getElementById('admin-filter-end-date')?.value || '';
+
+    const d7 = new Date();
+    d7.setDate(d7.getDate() - 7);
+    const minDate7 = getLocalDateString(d7);
+
+    const d30 = new Date();
+    d30.setDate(d30.getDate() - 30);
+    const minDate30 = getLocalDateString(d30);
 
     return checkinsData.filter(item => {
         if (hotelFilter !== 'ALL' && item.hotel !== hotelFilter) return false;
         if (originFilter !== 'ALL' && item.originType !== originFilter) return false;
-        if (periodFilter === 'TODAY' && item.date !== todayStr) return false;
+
+        const itemDate = normalizeToIsoDate(item.date);
+
+        if (periodFilter === 'TODAY') {
+            if (itemDate !== today) return false;
+        } else if (periodFilter === 'YESTERDAY') {
+            if (itemDate !== yesterday) return false;
+        } else if (periodFilter === 'SPECIFIC_DAY') {
+            if (singleDate && itemDate !== singleDate) return false;
+        } else if (periodFilter === 'RANGE') {
+            if (startDate && itemDate < startDate) return false;
+            if (endDate && itemDate > endDate) return false;
+        } else if (periodFilter === 'LAST_7') {
+            if (itemDate < minDate7 || itemDate > today) return false;
+        } else if (periodFilter === 'LAST_30') {
+            if (itemDate < minDate30 || itemDate > today) return false;
+        }
+
         if (searchQuery) {
             const hay = `${item.name} ${item.cpf} ${item.passport} ${item.city} ${item.uf} ${item.nationality} ${item.email}`.toLowerCase();
             if (!hay.includes(searchQuery)) return false;
@@ -755,7 +834,8 @@ function renderCharts(ufCounts, countryCounts, channelCounts, filtered) {
 
 function formatDateBR(isoDate) {
     if (!isoDate) return '';
-    const parts = isoDate.split('-');
+    const normalized = normalizeToIsoDate(isoDate);
+    const parts = normalized.split('-');
     if (parts.length !== 3) return isoDate;
     return `${parts[2]}/${parts[1]}/${parts[0]}`;
 }
@@ -763,7 +843,28 @@ function formatDateBR(isoDate) {
 function renderTable(list) {
     const tbody = document.getElementById('admin-checkins-tbody');
     if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-slate-400">Nenhum check-in encontrado para os filtros aplicados.</td></tr>`;
+        const period = document.getElementById('admin-filter-period')?.value;
+        let msg = 'Nenhum check-in encontrado para os filtros selecionados.';
+        if (period === 'TODAY') {
+            const todayBR = formatDateBR(getLocalDateString());
+            msg = `Nenhum check-in registrado para a data de hoje (${todayBR}).`;
+        } else if (period === 'YESTERDAY') {
+            const y = new Date(); y.setDate(y.getDate() - 1);
+            const yBR = formatDateBR(getLocalDateString(y));
+            msg = `Nenhum check-in registrado na data de ontem (${yBR}).`;
+        } else if (period === 'SPECIFIC_DAY') {
+            const s = document.getElementById('admin-filter-single-date')?.value;
+            msg = `Nenhum check-in registrado no dia ${formatDateBR(s)}.`;
+        } else if (period === 'RANGE') {
+            const s = document.getElementById('admin-filter-start-date')?.value;
+            const e = document.getElementById('admin-filter-end-date')?.value;
+            msg = `Nenhum check-in registrado no intervalo de ${formatDateBR(s)} até ${formatDateBR(e)}.`;
+        }
+        tbody.innerHTML = `<tr><td colspan="8" class="py-10 text-center text-slate-400">
+            <i class="fa-solid fa-calendar-xmark text-3xl text-slate-300 mb-2 block"></i>
+            <span class="font-semibold text-slate-600 block text-sm">${msg}</span>
+            <span class="text-xs text-slate-400 mt-1 block">Altere o filtro de período ou escolha outra data no menu acima para consultar outros dias.</span>
+        </td></tr>`;
         return;
     }
 

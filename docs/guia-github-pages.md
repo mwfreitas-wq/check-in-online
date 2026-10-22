@@ -56,26 +56,22 @@ git push -u origin main
    - **Branch:** selecione **`main`** e a pasta **`/(root)`**.
    - Clique em **`Save`**.
 4. Aguarde cerca de 1 a 2 minutos e recarregue a página. O GitHub exibirá o endereço oficial publicado:
-   `https://SEU-USUARIO.github.io/check-in-online/`
+   `https://mwfreitas-wq.github.io/check-in-online/`
 
 ---
 
-## Passo 4: Como Mudar o Endereço dos QR Codes
+## Passo 4: Endereço dos QR Codes Configurado
 
-Agora que o site está no ar, você atualiza os QR Codes em segundos:
+O sistema já está pré-configurado com o seu link oficial:
 
-1. Abra o seu site no navegador: `https://SEU-USUARIO.github.io/check-in-online/`
+1. Abra o seu site no navegador: `https://mwfreitas-wq.github.io/check-in-online/`
 2. Role até o rodapé e clique em **`Acesso Recepção`** (ícone de cadeado).
 3. Digite a senha: `master`
 4. Clique na aba **`Plaquinhas QR Code`**.
-5. No painel de configuração:
-   - **Detecção Automática:** Basta clicar no botão **"Detectar URL Atual"**. O sistema identifica sozinho que está rodando no GitHub Pages!
-   - Ou digite manualmente no campo: `https://SEU-USUARIO.github.io/check-in-online/`
-   - Clique em **`Atualizar os 3 QR Codes`**.
-6. Pronto! Os 3 QR Codes são atualizados na hora com as URLs oficiais:
-   - 🏖️ **Hit Hotel:** `https://SEU-USUARIO.github.io/check-in-online/?hotel=hit`
-   - ⚓ **Porto Salvador:** `https://SEU-USUARIO.github.io/check-in-online/?hotel=salvador`
-   - 🌴 **Porto das Âncoras:** `https://SEU-USUARIO.github.io/check-in-online/?hotel=ancoras`
+5. Os 3 QR Codes já estão gerados com as URLs oficiais:
+   - 🏖️ **Hit Hotel:** `https://mwfreitas-wq.github.io/check-in-online/?hotel=hit`
+   - ⚓ **Porto Salvador:** `https://mwfreitas-wq.github.io/check-in-online/?hotel=salvador`
+   - 🌴 **Porto das Âncoras:** `https://mwfreitas-wq.github.io/check-in-online/?hotel=ancoras`
 
 ---
 

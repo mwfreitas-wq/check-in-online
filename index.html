@@ -636,18 +636,102 @@
                         </select>
                     </div>
 
-                    <!--Filtro de Período -->
+                    <!-- Filtro de Período e Consulta por Data / Intervalo -->
                     <div>
-                        <label class="block text-[10px] font-bold uppercase text-slate-400 px-1">Período</label>
-                        <select id="admin-filter-period" onchange="renderAdminDashboard()" class="bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-teal-500">
-                            <option value="ALL">Últimos 30 dias + Hoje</option>
+                        <label class="block text-[10px] font-bold uppercase text-slate-400 px-1">Período / Consulta</label>
+                        <select id="admin-filter-period" onchange="handlePeriodFilterChange()" class="bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-teal-500">
                             <option value="TODAY">Apenas Check-ins de Hoje</option>
+                            <option value="YESTERDAY">Apenas Check-ins de Ontem</option>
+                            <option value="SPECIFIC_DAY">📅 Consultar por Dia Específico</option>
+                            <option value="RANGE">🗓️ Intervalo de Período (De / Até)</option>
+                            <option value="LAST_7">Últimos 7 dias</option>
+                            <option value="LAST_30">Últimos 30 dias</option>
+                            <option value="ALL">Todos os Check-ins (Histórico Geral)</option>
                         </select>
+                    </div>
+
+                    <!-- Seletor Dinâmico: Dia Específico -->
+                    <div id="wrapper-filter-single-date" class="hidden">
+                        <label class="block text-[10px] font-bold uppercase text-teal-700 px-1 flex items-center gap-1">
+                            <i class="fa-regular fa-calendar text-teal-600"></i> Escolher o Dia
+                        </label>
+                        <input type="date" id="admin-filter-single-date" onchange="renderAdminDashboard()" class="bg-white border-2 border-teal-500 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-teal-500 shadow-sm">
+                    </div>
+
+                    <!-- Seletor Dinâmico: Intervalo de Período (De / Até) -->
+                    <div id="wrapper-filter-range-start" class="hidden">
+                        <label class="block text-[10px] font-bold uppercase text-teal-700 px-1 flex items-center gap-1">
+                            <i class="fa-solid fa-calendar-day text-teal-600"></i> De (Início)
+                        </label>
+                        <input type="date" id="admin-filter-start-date" onchange="renderAdminDashboard()" class="bg-white border-2 border-teal-500 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-teal-500 shadow-sm">
+                    </div>
+                    <div id="wrapper-filter-range-end" class="hidden">
+                        <label class="block text-[10px] font-bold uppercase text-teal-700 px-1 flex items-center gap-1">
+                            <i class="fa-solid fa-calendar-check text-teal-600"></i> Até (Fim)
+                        </label>
+                        <input type="date" id="admin-filter-end-date" onchange="renderAdminDashboard()" class="bg-white border-2 border-teal-500 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-teal-500 shadow-sm">
                     </div>
 
                     <button onclick="exportCheckinsToCSV()" class="mt-3.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition">
                         <i class="fa-solid fa-file-csv"></i> Exportar Excel / CSV
                     </button>
+                </div>
+            </div>
+
+            <!-- BARRA DE INTEGRAÇÃO COM GOOGLE PLANILHAS (NUVEM EM TEMPO REAL) -->
+            <div class="bg-emerald-950 text-white px-4 sm:px-6 py-2.5 text-xs flex flex-wrap items-center justify-between gap-3 border-t border-emerald-800">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="font-bold text-emerald-200">Google Planilhas Conectada:</span>
+                    <span id="sheets-status-text" class="text-slate-300">Pronta para sincronizar dados dos hóspedes em tempo real</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="syncCheckinsFromGoogleSheets()" id="btn-sync-sheets" class="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] flex items-center gap-1.5 transition">
+                        <i class="fa-solid fa-arrows-rotate"></i> Sincronizar com a Planilha
+                    </button>
+                    <button type="button" onclick="toggleSheetsConfigModal()" class="px-2.5 py-1 rounded-lg bg-emerald-900 hover:bg-emerald-800 text-emerald-200 font-semibold text-[11px] border border-emerald-700 transition flex items-center gap-1">
+                        <i class="fa-solid fa-gear"></i> Configurar Link da Planilha
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL DE CONFIGURAÇÃO DO GOOGLE APPS SCRIPT -->
+        <div id="sheets-config-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-200 fade-in">
+                <div class="bg-emerald-800 text-white p-4 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-table text-emerald-300 text-lg"></i>
+                        <h3 class="font-bold text-sm">Conectar Google Planilhas ao Sistema</h3>
+                    </div>
+                    <button onclick="toggleSheetsConfigModal()" class="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="p-5 space-y-4 text-xs text-slate-600">
+                    <p>
+                        Cole abaixo a <strong>URL do App da Web</strong> gerada no menu <em>Extensões > Apps Script</em> da sua planilha do Google Drive:
+                    </p>
+                    <div>
+                        <label class="block font-bold text-slate-800 mb-1">URL do Web App (Google Apps Script)</label>
+                        <input type="text" id="sheets-api-url-input"
+                            placeholder="https://script.google.com/macros/s/AKfycb.../exec"
+                            class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono text-xs text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-[11px] space-y-1">
+                        <p class="font-bold"><i class="fa-solid fa-circle-info text-amber-600 mr-1"></i> Instruções simples:</p>
+                        <p>1. Crie uma planilha no seu Google Drive (ex: "Check-ins Hotéis").</p>
+                        <p>2. Abra o arquivo <code>google-sheets-script.js</code> que criamos no seu projeto, copie o código e cole no Apps Script da sua planilha.</p>
+                        <p>3. Clique em "Implantar" > "Nova implantação" como "App da Web", selecione acesso para "Qualquer pessoa" e cole o link aqui.</p>
+                    </div>
+                    <div class="flex gap-2 pt-2">
+                        <button type="button" onclick="toggleSheetsConfigModal()" class="flex-1 py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition">
+                            Cancelar
+                        </button>
+                        <button type="button" onclick="saveGoogleSheetsConfig()" class="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-check"></i> Salvar e Conectar
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -880,14 +964,25 @@
 
                 <!-- Campo de URL Principal Unificada -->
                 <div class="mt-4">
-                    <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">
-                        URL Base Principal (Exemplo: <code>https://SEU-USUARIO.github.io/NOME-DO-REPOSITORIO/</code>)
-                    </label>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                        <label class="block text-[11px] font-bold text-slate-700 uppercase">
+                            URL Base Principal (GitHub Pages: <code>https://mwfreitas-wq.github.io/check-in-online/</code>)
+                        </label>
+                        <div class="flex items-center gap-1.5">
+                            <button type="button" onclick="setLocalTestingBaseUrl()" class="px-2 py-1 rounded-md bg-slate-200 hover:bg-slate-300 text-slate-800 text-[11px] font-semibold transition flex items-center gap-1" title="Configurar para testar arquivos locais neste computador">
+                                <i class="fa-solid fa-laptop"></i> Usar Link Local (PC)
+                            </button>
+                            <button type="button" onclick="autoDetectCurrentBaseUrl()" class="px-2 py-1 rounded-md bg-teal-100 hover:bg-teal-200 text-teal-800 text-[11px] font-semibold transition flex items-center gap-1">
+                                <i class="fa-solid fa-arrows-rotate"></i> Restaurar GitHub Pages
+                            </button>
+                        </div>
+                    </div>
                     <div class="flex gap-2">
                         <div class="relative flex-grow">
                             <i class="fa-solid fa-globe absolute left-3.5 top-3 text-slate-400 text-xs"></i>
                             <input type="text" id="qr-base-url-input" oninput="applyBaseUrlToAll()"
-                                placeholder="https://seu-usuario.github.io/check-in-online/"
+                                value="https://mwfreitas-wq.github.io/check-in-online/"
+                                placeholder="https://mwfreitas-wq.github.io/check-in-online/"
                                 class="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono text-slate-800 focus:bg-white focus:ring-2 focus:ring-teal-500 outline-none">
                         </div>
                     </div>
@@ -939,12 +1034,12 @@
                             <canvas id="qr-canvas-hit" class="w-48 h-48 mx-auto block"></canvas>
                         </div>
                         <p id="qr-label-hit" class="text-[11px] text-slate-500 mt-3 font-mono bg-slate-100 py-1.5 px-2.5 rounded-lg break-all">
-                            https://sites.google.com/view/check-in-online-hotor/full-page-embed?hotel=hit
+                            https://mwfreitas-wq.github.io/check-in-online/?hotel=hit
                         </p>
                         <p class="text-xs text-slate-600 mt-3 font-medium">Direciona <strong>exclusivamente para o formulário do Hit Hotel</strong> (sem menus administrativos).</p>
                     </div>
                     <div class="p-4 bg-slate-50 border-t border-slate-200 space-y-2 no-print">
-                        <a id="qr-open-hit" href="https://sites.google.com/view/check-in-online-hotor/full-page-embed?hotel=hit" target="_blank" class="w-full py-2.5 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
+                        <a id="qr-open-hit" href="https://mwfreitas-wq.github.io/check-in-online/?hotel=hit" target="_blank" onclick="return handleQrTestClick(event, 'hit')" class="w-full py-2.5 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
                             <i class="fa-solid fa-arrow-up-right-from-square"></i> Testar Link do Hit Hotel
                         </a>
                         <div class="flex gap-2">
@@ -979,12 +1074,12 @@
                             <canvas id="qr-canvas-salvador" class="w-48 h-48 mx-auto block"></canvas>
                         </div>
                         <p id="qr-label-salvador" class="text-[11px] text-slate-500 mt-3 font-mono bg-slate-100 py-1.5 px-2.5 rounded-lg break-all">
-                            https://sites.google.com/view/check-in-online-hotor/full-page-embed?hotel=salvador
+                            https://mwfreitas-wq.github.io/check-in-online/?hotel=salvador
                         </p>
                         <p class="text-xs text-slate-600 mt-3 font-medium">Direciona <strong>exclusivamente para o formulário do Porto Salvador</strong> (sem menus administrativos).</p>
                     </div>
                     <div class="p-4 bg-slate-50 border-t border-slate-200 space-y-2 no-print">
-                        <a id="qr-open-salvador" href="https://sites.google.com/view/check-in-online-hotor/full-page-embed?hotel=salvador" target="_blank" class="w-full py-2.5 px-3 rounded-xl bg-blue-900 hover:bg-blue-950 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
+                        <a id="qr-open-salvador" href="https://mwfreitas-wq.github.io/check-in-online/?hotel=salvador" target="_blank" onclick="return handleQrTestClick(event, 'salvador')" class="w-full py-2.5 px-3 rounded-xl bg-blue-900 hover:bg-blue-950 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
                             <i class="fa-solid fa-arrow-up-right-from-square"></i> Testar Link do Porto Salvador
                         </a>
                         <div class="flex gap-2">
@@ -1019,12 +1114,12 @@
                             <canvas id="qr-canvas-ancoras" class="w-48 h-48 mx-auto block"></canvas>
                         </div>
                         <p id="qr-label-ancoras" class="text-[11px] text-slate-500 mt-3 font-mono bg-slate-100 py-1.5 px-2.5 rounded-lg break-all">
-                            https://sites.google.com/view/check-in-online-hotor/full-page-embed?hotel=ancoras
+                            https://mwfreitas-wq.github.io/check-in-online/?hotel=ancoras
                         </p>
                         <p class="text-xs text-slate-600 mt-3 font-medium">Direciona <strong>exclusivamente para o formulário do Porto das Âncoras</strong> (sem menus administrativos).</p>
                     </div>
                     <div class="p-4 bg-slate-50 border-t border-slate-200 space-y-2 no-print">
-                        <a id="qr-open-ancoras" href="https://sites.google.com/view/check-in-online-hotor/full-page-embed?hotel=ancoras" target="_blank" class="w-full py-2.5 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
+                        <a id="qr-open-ancoras" href="https://mwfreitas-wq.github.io/check-in-online/?hotel=ancoras" target="_blank" onclick="return handleQrTestClick(event, 'ancoras')" class="w-full py-2.5 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
                             <i class="fa-solid fa-arrow-up-right-from-square"></i> Testar Link do Porto das Âncoras
                         </a>
                         <div class="flex gap-2">
@@ -1246,7 +1341,7 @@
             if (window.location.protocol.startsWith('http')) {
                 return window.location.origin + window.location.pathname;
             }
-            return 'https://seu-usuario.github.io/check-in-online/';
+            return 'https://mwfreitas-wq.github.io/check-in-online/';
         }
         let currentSystemBaseUrl = getCurrentBaseUrl();
 
@@ -1978,6 +2073,26 @@
         // =========================================================================
         // GERAÇÃO DE QR CODES & CONFIGURAÇÃO AUTOMÁTICA GITHUB PAGES
         // =========================================================================
+        function setLocalTestingBaseUrl() {
+            const localBase = window.location.href.split('?')[0].split('#')[0];
+            const input = document.getElementById('qr-base-url-input');
+            if (input) {
+                input.value = localBase;
+                applyBaseUrlToAll();
+            }
+        }
+
+        function handleQrTestClick(event, key) {
+            const openLinkEl = document.getElementById('qr-open-' + key);
+            const targetUrl = openLinkEl ? openLinkEl.getAttribute('href') : '';
+
+            if (!targetUrl) {
+                event.preventDefault();
+                return false;
+            }
+            return true;
+        }
+
         function autoDetectCurrentBaseUrl() {
             const detected = getCurrentBaseUrl();
             const input = document.getElementById('qr-base-url-input');
@@ -2210,6 +2325,145 @@
         }
 
         // =========================================================================
+        // INTEGRAÇÃO COM GOOGLE PLANILHAS (GOOGLE SHEETS) & LOCALSTORAGE
+        // =========================================================================
+        const STORAGE_KEY_CHECKINS = 'fastcheckin_records_v1';
+        const STORAGE_KEY_SHEETS_URL = 'fastcheckin_sheets_url';
+
+        function getGoogleSheetsApiUrl() {
+            return (localStorage.getItem(STORAGE_KEY_SHEETS_URL) || '').trim();
+        }
+
+        function saveCheckinsToLocalStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY_CHECKINS, JSON.stringify(checkinsData));
+            } catch (e) {
+                console.warn('Falha ao salvar no localStorage:', e);
+            }
+        }
+
+        function loadCheckinsFromLocalStorage() {
+            try {
+                const stored = localStorage.getItem(STORAGE_KEY_CHECKINS);
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        checkinsData = parsed;
+                    }
+                }
+            } catch (e) {
+                console.warn('Falha ao carregar do localStorage:', e);
+            }
+        }
+
+        // Envia o novo registro assincronamente para a Planilha do Google
+        async function sendCheckinToGoogleSheets(record) {
+            const apiUrl = getGoogleSheetsApiUrl();
+            if (!apiUrl) {
+                console.log('Nenhuma URL do Google Sheets configurada ainda. Salvo localmente.');
+                return;
+            }
+
+            try {
+                // Modo no-cors é padrão do Google Apps Script para evitar bloqueios de CORS no browser
+                await fetch(apiUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(record)
+                });
+                console.log('Check-in enviado com sucesso para a Planilha Google!');
+            } catch (err) {
+                console.warn('Erro ao enviar para Google Sheets:', err);
+            }
+        }
+
+        // Sincroniza a tabela da Recepção com as linhas da Planilha Google
+        async function syncCheckinsFromGoogleSheets() {
+            const apiUrl = getGoogleSheetsApiUrl();
+            const statusText = document.getElementById('sheets-status-text');
+            const syncBtn = document.getElementById('btn-sync-sheets');
+
+            if (!apiUrl) {
+                if (statusText) statusText.innerHTML = '<span class="text-amber-300 font-semibold">Planilha não configurada. Clique em "Configurar Link da Planilha" para conectar seu Google Drive.</span>';
+                toggleSheetsConfigModal();
+                return;
+            }
+
+            if (syncBtn) {
+                syncBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Sincronizando...';
+                syncBtn.disabled = true;
+            }
+
+            try {
+                const res = await fetch(apiUrl);
+                const data = await res.json();
+
+                if (data && data.status === 'success' && Array.isArray(data.checkins)) {
+                    // Mescla os registros da planilha com os locais evitando duplicatas por ID
+                    const existingIds = new Set(checkinsData.map(c => c.id));
+                    data.checkins.forEach(item => {
+                        if (!existingIds.has(item.id)) {
+                            checkinsData.push(item);
+                            existingIds.add(item.id);
+                        }
+                    });
+
+                    saveCheckinsToLocalStorage();
+                    renderAdminDashboard();
+
+                    if (statusText) {
+                        statusText.innerHTML = `<span class="text-emerald-300 font-bold"><i class="fa-solid fa-circle-check"></i> Sincronizado!</span> ${data.checkins.length} check-in(s) carregados da Planilha Google.`;
+                    }
+                } else {
+                    if (statusText) {
+                        statusText.innerHTML = '<span class="text-amber-300">A planilha respondeu, mas não retornou registros válidos.</span>';
+                    }
+                }
+            } catch (err) {
+                console.warn('Erro ao sincronizar com Google Sheets:', err);
+                if (statusText) {
+                    statusText.innerHTML = '<span class="text-rose-300 font-semibold"><i class="fa-solid fa-triangle-exclamation"></i> Falha ao conectar na planilha. Verifique a URL do Web App.</span>';
+                }
+            } finally {
+                if (syncBtn) {
+                    syncBtn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Sincronizar com a Planilha';
+                    syncBtn.disabled = false;
+                }
+            }
+        }
+
+        function toggleSheetsConfigModal() {
+            const modal = document.getElementById('sheets-config-modal');
+            const input = document.getElementById('sheets-api-url-input');
+            if (!modal) return;
+
+            if (modal.classList.contains('hidden')) {
+                if (input) input.value = getGoogleSheetsApiUrl();
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            } else {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        function saveGoogleSheetsConfig() {
+            const input = document.getElementById('sheets-api-url-input');
+            const url = (input ? input.value : '').trim();
+            localStorage.setItem(STORAGE_KEY_SHEETS_URL, url);
+            toggleSheetsConfigModal();
+
+            const statusText = document.getElementById('sheets-status-text');
+            if (url) {
+                if (statusText) statusText.innerHTML = '<span class="text-emerald-300 font-bold">Link salvo!</span> Conectando com a planilha...';
+                syncCheckinsFromGoogleSheets();
+            } else {
+                if (statusText) statusText.textContent = 'Nenhuma planilha vinculada no momento.';
+            }
+        }
+
+        // =========================================================================
         // 8. SUBMISSÃO DO CHECK-IN COM VALIDAÇÃO DAS REGRAS BR vs ESTRANGEIRO
         // =========================================================================
         function handleCheckinSubmit(e) {
@@ -2257,10 +2511,10 @@
                 }
             }
 
-            // Cria registro com data e hora atuais
+            // Cria registro com data e hora locais atuais (fuso horário local Brasil)
             const now = new Date();
-            const dateStr = now.toISOString().split('T')[0];
-            const timeStr = now.toTimeString().substring(0, 5);
+            const dateStr = getLocalDateString(now);
+            const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
             const protocolId = 'CHK-' + Math.floor(1000 + Math.random() * 9000);
 
             const newRecord = {
@@ -2288,6 +2542,8 @@
 
             // Salva no topo da lista para aparecer imediatamente nos relatórios
             checkinsData.unshift(newRecord);
+            saveCheckinsToLocalStorage();
+            sendCheckinToGoogleSheets(newRecord);
             document.getElementById('badge-total-checkins').textContent = checkinsData.length;
 
             // Mostra tela de sucesso (Voucher Digital)
@@ -2382,17 +2638,98 @@
         let chartChannelsInstance = null;
         let chartHoursInstance = null;
 
+        // Retorna a data atual no formato YYYY-MM-DD usando o fuso horário local do navegador
+        function getLocalDateString(dateObj = new Date()) {
+            const year = dateObj.getFullYear();
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Converte qualquer formato de data (DD/MM/YYYY, ISO, Date string) para YYYY-MM-DD
+        function normalizeToIsoDate(dateStr) {
+            if (!dateStr) return '';
+            const s = String(dateStr).trim();
+            // Formato DD/MM/YYYY ou DD-MM-YYYY
+            if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}/.test(s)) {
+                const parts = s.split(/[\/\-]/);
+                const day = parts[0].padStart(2, '0');
+                const month = parts[1].padStart(2, '0');
+                const year = parts[2].substring(0, 4);
+                return `${year}-${month}-${day}`;
+            }
+            // Formato YYYY-MM-DD
+            if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+                return s.substring(0, 10);
+            }
+            // Fallback para conversão padrão
+            const parsed = new Date(s);
+            if (!isNaN(parsed.getTime())) {
+                return getLocalDateString(parsed);
+            }
+            return s;
+        }
+
+        // Alterna a exibição dos seletores de dia específico e intervalo
+        function handlePeriodFilterChange() {
+            const period = document.getElementById('admin-filter-period').value;
+            const singleWrap = document.getElementById('wrapper-filter-single-date');
+            const startWrap = document.getElementById('wrapper-filter-range-start');
+            const endWrap = document.getElementById('wrapper-filter-range-end');
+
+            if (singleWrap) singleWrap.classList.toggle('hidden', period !== 'SPECIFIC_DAY');
+            if (startWrap) startWrap.classList.toggle('hidden', period !== 'RANGE');
+            if (endWrap) endWrap.classList.toggle('hidden', period !== 'RANGE');
+
+            renderAdminDashboard();
+        }
+
         function getFilteredCheckins() {
             const hotelFilter = document.getElementById('admin-filter-hotel').value;
             const originFilter = document.getElementById('admin-filter-origin').value;
             const periodFilter = document.getElementById('admin-filter-period').value;
             const searchQuery = (document.getElementById('admin-search-input').value || '').toLowerCase();
-            const todayStr = '2026-10-21';
+
+            // Datas de referência calculadas dinamicamente com base no relógio de hoje
+            const today = getLocalDateString(new Date());
+
+            const yesterdayDate = new Date();
+            yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+            const yesterday = getLocalDateString(yesterdayDate);
+
+            const singleDate = document.getElementById('admin-filter-single-date')?.value || today;
+            const startDate = document.getElementById('admin-filter-start-date')?.value || '';
+            const endDate = document.getElementById('admin-filter-end-date')?.value || '';
+
+            const d7 = new Date();
+            d7.setDate(d7.getDate() - 7);
+            const minDate7 = getLocalDateString(d7);
+
+            const d30 = new Date();
+            d30.setDate(d30.getDate() - 30);
+            const minDate30 = getLocalDateString(d30);
 
             return checkinsData.filter(item => {
                 if (hotelFilter !== 'ALL' && item.hotel !== hotelFilter) return false;
                 if (originFilter !== 'ALL' && item.originType !== originFilter) return false;
-                if (periodFilter === 'TODAY' && item.date !== todayStr) return false;
+
+                const itemDate = normalizeToIsoDate(item.date);
+
+                if (periodFilter === 'TODAY') {
+                    if (itemDate !== today) return false;
+                } else if (periodFilter === 'YESTERDAY') {
+                    if (itemDate !== yesterday) return false;
+                } else if (periodFilter === 'SPECIFIC_DAY') {
+                    if (singleDate && itemDate !== singleDate) return false;
+                } else if (periodFilter === 'RANGE') {
+                    if (startDate && itemDate < startDate) return false;
+                    if (endDate && itemDate > endDate) return false;
+                } else if (periodFilter === 'LAST_7') {
+                    if (itemDate < minDate7 || itemDate > today) return false;
+                } else if (periodFilter === 'LAST_30') {
+                    if (itemDate < minDate30 || itemDate > today) return false;
+                }
+
                 if (searchQuery) {
                     const hay = `${item.name} ${item.cpf} ${item.passport} ${item.city} ${item.uf} ${item.nationality} ${item.email}`.toLowerCase();
                     if (!hay.includes(searchQuery)) return false;
@@ -2595,7 +2932,8 @@
 
         function formatDateBR(isoDate) {
             if (!isoDate) return '';
-            const parts = isoDate.split('-');
+            const normalized = normalizeToIsoDate(isoDate);
+            const parts = normalized.split('-');
             if (parts.length !== 3) return isoDate;
             return `${parts[2]}/${parts[1]}/${parts[0]}`;
         }
@@ -2603,7 +2941,28 @@
         function renderTable(list) {
             const tbody = document.getElementById('admin-checkins-tbody');
             if (list.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-slate-400">Nenhum check-in encontrado para os filtros aplicados.</td></tr>`;
+                const period = document.getElementById('admin-filter-period')?.value;
+                let msg = 'Nenhum check-in encontrado para os filtros selecionados.';
+                if (period === 'TODAY') {
+                    const todayBR = formatDateBR(getLocalDateString());
+                    msg = `Nenhum check-in registrado para a data de hoje (${todayBR}).`;
+                } else if (period === 'YESTERDAY') {
+                    const y = new Date(); y.setDate(y.getDate() - 1);
+                    const yBR = formatDateBR(getLocalDateString(y));
+                    msg = `Nenhum check-in registrado na data de ontem (${yBR}).`;
+                } else if (period === 'SPECIFIC_DAY') {
+                    const s = document.getElementById('admin-filter-single-date')?.value;
+                    msg = `Nenhum check-in registrado no dia ${formatDateBR(s)}.`;
+                } else if (period === 'RANGE') {
+                    const s = document.getElementById('admin-filter-start-date')?.value;
+                    const e = document.getElementById('admin-filter-end-date')?.value;
+                    msg = `Nenhum check-in registrado no intervalo de ${formatDateBR(s)} até ${formatDateBR(e)}.`;
+                }
+                tbody.innerHTML = `<tr><td colspan="8" class="py-10 text-center text-slate-400">
+                    <i class="fa-solid fa-calendar-xmark text-3xl text-slate-300 mb-2 block"></i>
+                    <span class="font-semibold text-slate-600 block text-sm">${msg}</span>
+                    <span class="text-xs text-slate-400 mt-1 block">Altere o filtro de período ou escolha outra data no menu acima para consultar outros dias.</span>
+                </td></tr>`;
                 return;
             }
 
@@ -2776,6 +3135,7 @@
         }
 
         window.onload = function () {
+            loadCheckinsFromLocalStorage();
             document.getElementById('badge-total-checkins').textContent = checkinsData.length;
 
             const detected = detectHotelFromEnvironment();
@@ -2794,11 +3154,31 @@
 
             initSignatureCanvas();
 
+            // Inicializa valores padrão dos campos de consulta por data
+            const todayStrInit = getLocalDateString();
+            const singleDateInput = document.getElementById('admin-filter-single-date');
+            if (singleDateInput) singleDateInput.value = todayStrInit;
+
+            const startDateInput = document.getElementById('admin-filter-start-date');
+            const endDateInput = document.getElementById('admin-filter-end-date');
+            if (startDateInput) startDateInput.value = todayStrInit;
+            if (endDateInput) endDateInput.value = todayStrInit;
+
             const baseInput = document.getElementById('qr-base-url-input');
             if (baseInput) {
                 baseInput.value = getCurrentBaseUrl();
             }
             applyBaseUrlToAll();
+
+            // Se já houver URL do Google Sheets salva, atualiza o status
+            const sheetsUrl = getGoogleSheetsApiUrl();
+            const statusText = document.getElementById('sheets-status-text');
+            if (sheetsUrl) {
+                if (statusText) statusText.innerHTML = '<span class="text-emerald-300 font-bold"><i class="fa-solid fa-circle-check"></i> Conectado:</span> Sincronizando com a planilha...';
+                syncCheckinsFromGoogleSheets();
+            } else {
+                if (statusText) statusText.innerHTML = '<span class="text-amber-300">Nenhuma planilha vinculada ainda. Clique em "Configurar Link da Planilha" para conectar.</span>';
+            }
         };
     </script>
 </body>

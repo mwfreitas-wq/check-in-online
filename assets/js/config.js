@@ -9,7 +9,7 @@ function getCurrentBaseUrl() {
     if (window.location.protocol.startsWith('http')) {
         return window.location.origin + window.location.pathname;
     }
-    return 'https://seu-usuario.github.io/check-in-online/';
+    return 'https://mwfreitas-wq.github.io/check-in-online/';
 }
 const ADMIN_PASSWORD = 'master';
 

@@ -11,7 +11,8 @@ Sistema unificado de **Check-in Digital (FNRH)** e **Business Intelligence (BI)*
 
 ```text
 check in online/
-├── index.html                   # Aplicação Completa Standalone (Pronta para uso direto e Google Sites)
+├── index.html                   # Aplicação Completa Standalone (Pronta para uso direto e GitHub Pages)
+├── google-sheets-script.js      # Script pronto para colar no Google Apps Script (integração Planilhas)
 │
 ├── assets/
 │   ├── css/
@@ -29,6 +30,7 @@ check in online/
 │
 └── docs/
     ├── README.md                # Este manual técnico
+    ├── guia-google-planilhas.md # Passo a passo para salvar os dados no Google Planilhas
     ├── guia-github-pages.md     # Passo a passo completo para hospedar no GitHub Pages
     └── guia-google-sites.md     # Instruções de incorporação legada (Google Sites)
 ```
