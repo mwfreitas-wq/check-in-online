@@ -718,11 +718,17 @@
                             placeholder="https://script.google.com/macros/s/AKfycb.../exec"
                             class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono text-xs text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500">
                     </div>
+                    <div id="sheets-test-result" class="hidden"></div>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="testGoogleSheetsConnection()" class="py-2 px-3 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold text-xs transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-bolt text-teal-600"></i> Testar Conexão Agora
+                        </button>
+                    </div>
                     <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-[11px] space-y-1">
-                        <p class="font-bold"><i class="fa-solid fa-circle-info text-amber-600 mr-1"></i> Instruções simples:</p>
-                        <p>1. Crie uma planilha no seu Google Drive (ex: "Check-ins Hotéis").</p>
-                        <p>2. Abra o arquivo <code>google-sheets-script.js</code> que criamos no seu projeto, copie o código e cole no Apps Script da sua planilha.</p>
-                        <p>3. Clique em "Implantar" > "Nova implantação" como "App da Web", selecione acesso para "Qualquer pessoa" e cole o link aqui.</p>
+                        <p class="font-bold"><i class="fa-solid fa-circle-info text-amber-600 mr-1"></i> Requisitos Importantes no Apps Script:</p>
+                        <p>1. No menu <strong>Implantar > Gerenciar implantações</strong> (ou Nova implantação):</p>
+                        <p>2. <strong>Executar como:</strong> Selecione <em>"Eu (seu e-mail)"</em>.</p>
+                        <p>3. <strong>Quem tem acesso:</strong> Selecione obrigatoriamente <em>"Qualquer pessoa" (Anyone)</em> para que os celulares dos hóspedes consigam gravar na planilha sem pedir login da conta Google.</p>
                     </div>
                     <div class="flex gap-2 pt-2">
                         <button type="button" onclick="toggleSheetsConfigModal()" class="flex-1 py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition">
@@ -2330,8 +2336,20 @@
         const STORAGE_KEY_CHECKINS = 'fastcheckin_records_v1';
         const STORAGE_KEY_SHEETS_URL = 'fastcheckin_sheets_url';
 
+        // URL oficial padrão da Planilha Google (Apps Script Web App)
+        // Quando preenchida aqui, TODOS os celulares de hóspedes enviam automaticamente!
+        const DEFAULT_GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbx6KlqW9YmUkQSGprbHhbQsOteLb1nMSG630UOUj1dIpqCq_0QEcErqPmLoowu6tBx4ZQ/exec';
+
+        function cleanTime(timeStr) {
+            if (!timeStr) return '00:00';
+            const m = String(timeStr).match(/(\d{2}:\d{2})/);
+            return m ? m[1] : String(timeStr).substring(0, 5);
+        }
+
         function getGoogleSheetsApiUrl() {
-            return (localStorage.getItem(STORAGE_KEY_SHEETS_URL) || '').trim();
+            const custom = (localStorage.getItem(STORAGE_KEY_SHEETS_URL) || '').trim();
+            if (custom) return custom;
+            return (typeof DEFAULT_GOOGLE_SHEETS_URL !== 'undefined' ? DEFAULT_GOOGLE_SHEETS_URL : '').trim();
         }
 
         function saveCheckinsToLocalStorage() {
@@ -2360,52 +2378,76 @@
         async function sendCheckinToGoogleSheets(record) {
             const apiUrl = getGoogleSheetsApiUrl();
             if (!apiUrl) {
-                console.log('Nenhuma URL do Google Sheets configurada ainda. Salvo localmente.');
-                return;
+                console.warn('Nenhuma URL do Google Sheets configurada. Check-in salvo apenas localmente no aparelho.');
+                return false;
             }
 
             try {
-                // Modo no-cors é padrão do Google Apps Script para evitar bloqueios de CORS no browser
+                // Envia como text/plain com mode no-cors para evitar bloqueios de CORS em qualquer navegador/celular
                 await fetch(apiUrl, {
                     method: 'POST',
                     mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
+                    cache: 'no-cache',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify(record)
                 });
                 console.log('Check-in enviado com sucesso para a Planilha Google!');
+                return true;
             } catch (err) {
                 console.warn('Erro ao enviar para Google Sheets:', err);
+                return false;
             }
         }
 
         // Sincroniza a tabela da Recepção com as linhas da Planilha Google
-        async function syncCheckinsFromGoogleSheets() {
+        async function syncCheckinsFromGoogleSheets(isBackground = false) {
             const apiUrl = getGoogleSheetsApiUrl();
             const statusText = document.getElementById('sheets-status-text');
             const syncBtn = document.getElementById('btn-sync-sheets');
 
             if (!apiUrl) {
                 if (statusText) statusText.innerHTML = '<span class="text-amber-300 font-semibold">Planilha não configurada. Clique em "Configurar Link da Planilha" para conectar seu Google Drive.</span>';
-                toggleSheetsConfigModal();
+                if (!isBackground) toggleSheetsConfigModal();
                 return;
             }
 
-            if (syncBtn) {
+            if (syncBtn && !isBackground) {
                 syncBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Sincronizando...';
                 syncBtn.disabled = true;
             }
 
             try {
-                const res = await fetch(apiUrl);
-                const data = await res.json();
+                const res = await fetch(apiUrl, { cache: 'no-store' });
+                const text = await res.text();
+
+                if (text.includes('accounts.google.com') || text.includes('Sign in') || text.includes('ServiceLogin')) {
+                    if (statusText) {
+                        statusText.innerHTML = '<span class="text-rose-300 font-bold"><i class="fa-solid fa-lock"></i> Permissão necessária:</span> No Apps Script, configure "Quem tem acesso" para "Qualquer pessoa" (Anyone).';
+                    }
+                    return;
+                }
+
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch(e) {
+                    console.warn('Resposta não é JSON válido:', text);
+                    if (statusText) statusText.innerHTML = '<span class="text-rose-300 font-semibold">A URL da planilha não retornou JSON. Verifique se copiou todo o código do Apps Script.</span>';
+                    return;
+                }
 
                 if (data && data.status === 'success' && Array.isArray(data.checkins)) {
                     // Mescla os registros da planilha com os locais evitando duplicatas por ID
                     const existingIds = new Set(checkinsData.map(c => c.id));
+                    let newItemsCount = 0;
                     data.checkins.forEach(item => {
+                        item.date = normalizeToIsoDate(item.date);
+                        item.dob = normalizeToIsoDate(item.dob, '1990');
+                        item.time = cleanTime(item.time);
                         if (!existingIds.has(item.id)) {
-                            checkinsData.push(item);
+                            checkinsData.unshift(item);
                             existingIds.add(item.id);
+                            newItemsCount++;
                         }
                     });
 
@@ -2413,7 +2455,7 @@
                     renderAdminDashboard();
 
                     if (statusText) {
-                        statusText.innerHTML = `<span class="text-emerald-300 font-bold"><i class="fa-solid fa-circle-check"></i> Sincronizado!</span> ${data.checkins.length} check-in(s) carregados da Planilha Google.`;
+                        statusText.innerHTML = `<span class="text-emerald-300 font-bold"><i class="fa-solid fa-circle-check"></i> Sincronizado em tempo real:</span> ${data.checkins.length} check-in(s) carregados da Planilha Google.`;
                     }
                 } else {
                     if (statusText) {
@@ -2422,24 +2464,85 @@
                 }
             } catch (err) {
                 console.warn('Erro ao sincronizar com Google Sheets:', err);
-                if (statusText) {
+                if (statusText && !isBackground) {
                     statusText.innerHTML = '<span class="text-rose-300 font-semibold"><i class="fa-solid fa-triangle-exclamation"></i> Falha ao conectar na planilha. Verifique a URL do Web App.</span>';
                 }
             } finally {
-                if (syncBtn) {
+                if (syncBtn && !isBackground) {
                     syncBtn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Sincronizar com a Planilha';
                     syncBtn.disabled = false;
                 }
             }
         }
 
+        // Teste de conexão direto no modal
+        async function testGoogleSheetsConnection() {
+            const input = document.getElementById('sheets-api-url-input');
+            const testResult = document.getElementById('sheets-test-result');
+            const url = (input ? input.value : '').trim();
+
+            if (!url) {
+                if (testResult) {
+                    testResult.className = 'p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs block';
+                    testResult.innerHTML = '⚠️ Por favor, cole a URL do Google Apps Script acima antes de testar.';
+                }
+                return;
+            }
+
+            if (testResult) {
+                testResult.className = 'p-3 bg-slate-100 border border-slate-300 rounded-xl text-slate-700 text-xs block';
+                testResult.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-teal-600 mr-1.5"></i> Testando comunicação com o Google Drive...';
+            }
+
+            try {
+                const res = await fetch(url, { cache: 'no-store' });
+                const text = await res.text();
+
+                if (text.includes('accounts.google.com') || text.includes('Sign in') || text.includes('ServiceLogin')) {
+                    testResult.className = 'p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs block';
+                    testResult.innerHTML = '❌ <strong>Acesso Bloqueado pelo Google:</strong> No menu <em>Extensões > Apps Script > Implantar > Gerenciar implantações</em>, certifique-se de configurar <strong>"Quem tem acesso"</strong> para <strong>"Qualquer pessoa" (Anyone)</strong>.';
+                    return;
+                }
+
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch(e) {
+                    testResult.className = 'p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs block';
+                    testResult.innerHTML = '❌ A URL respondeu, mas não retornou o formato esperado. Verifique se copiou todo o código do arquivo <code>google-sheets-script.js</code> para o Apps Script.';
+                    return;
+                }
+
+                if (data && data.status === 'success') {
+                    testResult.className = 'p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs block';
+                    testResult.innerHTML = `✅ <strong>Conexão Perfeita!</strong> A planilha respondeu com sucesso. Total de check-ins registrados na planilha: <strong>${data.total || 0}</strong>.`;
+                }
+            } catch(err) {
+                testResult.className = 'p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs block';
+                testResult.innerHTML = `❌ <strong>Falha na conexão:</strong> Não foi possível alcançar a URL informada (${err.message}). Certifique-se de que a implantação do Apps Script foi concluída.`;
+            }
+        }
+
+        let sheetsAutoSyncTimer = null;
+        function startSheetsAutoSync() {
+            if (sheetsAutoSyncTimer) clearInterval(sheetsAutoSyncTimer);
+            // Sincroniza periodicamente em segundo plano a cada 20 segundos
+            sheetsAutoSyncTimer = setInterval(() => {
+                if (isAdminAuthenticated) {
+                    syncCheckinsFromGoogleSheets(true);
+                }
+            }, 20000);
+        }
+
         function toggleSheetsConfigModal() {
             const modal = document.getElementById('sheets-config-modal');
             const input = document.getElementById('sheets-api-url-input');
+            const testResult = document.getElementById('sheets-test-result');
             if (!modal) return;
 
             if (modal.classList.contains('hidden')) {
                 if (input) input.value = getGoogleSheetsApiUrl();
+                if (testResult) testResult.classList.add('hidden');
                 modal.classList.remove('hidden');
                 modal.classList.add('flex');
             } else {
@@ -2646,10 +2749,14 @@
             return `${year}-${month}-${day}`;
         }
 
-        // Converte qualquer formato de data (DD/MM/YYYY, ISO, Date string) para YYYY-MM-DD
-        function normalizeToIsoDate(dateStr) {
+        // Converte qualquer formato de data (DD/MM/YYYY, ISO, Date string ou 'Wed Oct 21') para YYYY-MM-DD
+        function normalizeToIsoDate(dateStr, fallbackYear = '2026') {
             if (!dateStr) return '';
             const s = String(dateStr).trim();
+            // Formato YYYY-MM-DD
+            if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+                return s.substring(0, 10);
+            }
             // Formato DD/MM/YYYY ou DD-MM-YYYY
             if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}/.test(s)) {
                 const parts = s.split(/[\/\-]/);
@@ -2658,9 +2765,17 @@
                 const year = parts[2].substring(0, 4);
                 return `${year}-${month}-${day}`;
             }
-            // Formato YYYY-MM-DD
-            if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
-                return s.substring(0, 10);
+            // Tratamento especial para resíduo de Date do Google Sheets (ex: 'Wed Oct 21')
+            const MONTH_MAP = {
+                jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
+                jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12'
+            };
+            const mGas = s.match(/^[A-Za-z]{3}\s+([A-Za-z]{3})\s+(\d{1,2})/);
+            if (mGas) {
+                const monKey = mGas[1].toLowerCase();
+                const mon = MONTH_MAP[monKey] || '01';
+                const day = mGas[2].padStart(2, '0');
+                return `${fallbackYear}-${mon}-${day}`;
             }
             // Fallback para conversão padrão
             const parsed = new Date(s);
@@ -2977,7 +3092,7 @@
                     <tr class="hover:bg-slate-50 transition">
                         <td class="py-3 px-4 whitespace-nowrap">
                             <div class="font-bold text-slate-800">${formatDateBR(item.date)}</div>
-                            <div class="text-[11px] text-slate-500"><i class="fa-regular fa-clock"></i> ${item.time} • <span class="font-mono">${item.id}</span></div>
+                            <div class="text-[11px] text-slate-500"><i class="fa-regular fa-clock"></i> ${cleanTime(item.time)} • <span class="font-mono">${item.id}</span></div>
                         </td>
                         <td class="py-3 px-4 whitespace-nowrap">
                             <span class="px-2.5 py-1 rounded-full text-[11px] font-bold border ${hCfg.pillColor}">
@@ -3071,7 +3186,7 @@
                 ...rows.map(r => [
                     r.id,
                     formatDateBR(r.date),
-                    r.time,
+                    cleanTime(r.time),
                     HOTELS_CONFIG[r.hotel]?.name || r.hotel,
                     r.originType,
                     `"${r.name}"`,
@@ -3179,6 +3294,9 @@
             } else {
                 if (statusText) statusText.innerHTML = '<span class="text-amber-300">Nenhuma planilha vinculada ainda. Clique em "Configurar Link da Planilha" para conectar.</span>';
             }
+
+            // Inicia sincronização automática periódica (a cada 20 segundos)
+            startSheetsAutoSync();
         };
     </script>
 </body>
