@@ -14,6 +14,9 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- QRious Library for Offline/Instant Canvas QR Code Generation (100% Google Sites Compatible) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <!-- Firebase App & Firestore SDKs (Compat v10 - Sem necessidade de bundler/npm) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
     <style>
         body {
@@ -678,63 +681,86 @@
                 </div>
             </div>
 
-            <!-- BARRA DE INTEGRAÇÃO COM GOOGLE PLANILHAS (NUVEM EM TEMPO REAL) -->
-            <div class="bg-emerald-950 text-white px-4 sm:px-6 py-2.5 text-xs flex flex-wrap items-center justify-between gap-3 border-t border-emerald-800">
+            <!-- BARRA DE INTEGRAÇÃO COM FIREBASE FIRESTORE (NUVEM EM TEMPO REAL) -->
+            <div class="bg-slate-900 text-white px-4 sm:px-6 py-2.5 text-xs flex flex-wrap items-center justify-between gap-3 border-t border-amber-600/30">
                 <div class="flex items-center gap-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span class="font-bold text-emerald-200">Google Planilhas Conectada:</span>
-                    <span id="sheets-status-text" class="text-slate-300">Pronta para sincronizar dados dos hóspedes em tempo real</span>
+                    <span id="firebase-pulse-dot" class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                    <span class="font-bold text-amber-300 flex items-center gap-1.5">
+                        <i class="fa-solid fa-fire text-amber-400"></i> Firebase Firestore:
+                    </span>
+                    <span id="firebase-status-text" class="text-slate-300">Inicializando sincronização em nuvem...</span>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button type="button" onclick="syncCheckinsFromGoogleSheets()" id="btn-sync-sheets" class="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] flex items-center gap-1.5 transition">
-                        <i class="fa-solid fa-arrows-rotate"></i> Sincronizar com a Planilha
+                    <button type="button" onclick="syncCheckinsFromFirebase()" id="btn-sync-firebase" class="px-3 py-1 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-bold text-[11px] flex items-center gap-1.5 transition shadow">
+                        <i class="fa-solid fa-arrows-rotate"></i> Recarregar Dados
                     </button>
-                    <button type="button" onclick="toggleSheetsConfigModal()" class="px-2.5 py-1 rounded-lg bg-emerald-900 hover:bg-emerald-800 text-emerald-200 font-semibold text-[11px] border border-emerald-700 transition flex items-center gap-1">
-                        <i class="fa-solid fa-gear"></i> Configurar Link da Planilha
+                    <button type="button" onclick="toggleFirebaseConfigModal()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-200 font-semibold text-[11px] border border-slate-700 transition flex items-center gap-1">
+                        <i class="fa-solid fa-gear text-amber-400"></i> Configurar Chaves do Firebase
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- MODAL DE CONFIGURAÇÃO DO GOOGLE APPS SCRIPT -->
-        <div id="sheets-config-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
-            <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-200 fade-in">
-                <div class="bg-emerald-800 text-white p-4 flex items-center justify-between">
+        <!-- MODAL DE CONFIGURAÇÃO DO FIREBASE FIRESTORE -->
+        <div id="firebase-config-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-xl w-full overflow-hidden shadow-2xl border border-slate-200 fade-in">
+                <div class="bg-slate-900 text-white p-4 flex items-center justify-between border-b border-amber-500/30">
                     <div class="flex items-center gap-2">
-                        <i class="fa-solid fa-table text-emerald-300 text-lg"></i>
-                        <h3 class="font-bold text-sm">Conectar Google Planilhas ao Sistema</h3>
+                        <i class="fa-solid fa-fire text-amber-400 text-xl"></i>
+                        <div>
+                            <h3 class="font-bold text-sm">Conectar Banco de Dados Firebase (Firestore)</h3>
+                            <p class="text-[10px] text-slate-400">Sincronização em nuvem em tempo real para todos os hotéis</p>
+                        </div>
                     </div>
-                    <button onclick="toggleSheetsConfigModal()" class="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white">
+                    <button onclick="toggleFirebaseConfigModal()" class="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
                 <div class="p-5 space-y-4 text-xs text-slate-600">
                     <p>
-                        Cole abaixo a <strong>URL do App da Web</strong> gerada no menu <em>Extensões > Apps Script</em> da sua planilha do Google Drive:
+                        Cole abaixo o objeto de configuração <strong>firebaseConfig</strong> copiado do seu Console do Firebase (<em>Configurações do Projeto > Seus aplicativos > SDK da Web</em>):
                     </p>
                     <div>
-                        <label class="block font-bold text-slate-800 mb-1">URL do Web App (Google Apps Script)</label>
-                        <input type="text" id="sheets-api-url-input"
-                            placeholder="https://script.google.com/macros/s/AKfycb.../exec"
-                            class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono text-xs text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500">
+                        <label class="block font-bold text-slate-800 mb-1 flex items-center justify-between">
+                            <span>Código de Configuração do Firebase</span>
+                            <span class="text-[10px] font-normal text-slate-400">Aceita formato JS ou JSON</span>
+                        </label>
+                        <textarea id="firebase-config-input" rows="7"
+                            placeholder='const firebaseConfig = {
+  apiKey: "AIzaSy...",
+  authDomain: "seu-projeto.firebaseapp.com",
+  projectId: "seu-projeto",
+  storageBucket: "seu-projeto.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "1:123456789:web:abcdef"
+};'
+                            class="w-full px-3 py-2 bg-slate-900 font-mono text-[11px] text-amber-300 rounded-xl border border-slate-700 outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"></textarea>
                     </div>
-                    <div id="sheets-test-result" class="hidden"></div>
+
+                    <div id="firebase-test-result" class="hidden"></div>
+
                     <div class="flex gap-2">
-                        <button type="button" onclick="testGoogleSheetsConnection()" class="py-2 px-3 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold text-xs transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-bolt text-teal-600"></i> Testar Conexão Agora
+                        <button type="button" onclick="testFirebaseConnection()" class="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs transition flex items-center gap-1.5 border border-slate-300">
+                            <i class="fa-solid fa-bolt text-amber-500"></i> Testar Conexão com Firestore
+                        </button>
+                        <button type="button" onclick="clearFirebaseConfig()" class="py-2 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-xs transition flex items-center gap-1.5 border border-rose-200">
+                            <i class="fa-solid fa-trash-can"></i> Limpar Chaves
                         </button>
                     </div>
+
                     <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-[11px] space-y-1">
-                        <p class="font-bold"><i class="fa-solid fa-circle-info text-amber-600 mr-1"></i> Requisitos Importantes no Apps Script:</p>
-                        <p>1. No menu <strong>Implantar > Gerenciar implantações</strong> (ou Nova implantação):</p>
-                        <p>2. <strong>Executar como:</strong> Selecione <em>"Eu (seu e-mail)"</em>.</p>
-                        <p>3. <strong>Quem tem acesso:</strong> Selecione obrigatoriamente <em>"Qualquer pessoa" (Anyone)</em> para que os celulares dos hóspedes consigam gravar na planilha sem pedir login da conta Google.</p>
+                        <p class="font-bold flex items-center gap-1"><i class="fa-solid fa-shield-halved text-amber-600"></i> Regra de Segurança do Firestore:</p>
+                        <p>No console do Firebase (aba <strong>Firestore Database > Regras</strong>), permita leitura e escrita na coleção <code>checkins</code>:</p>
+                        <div class="bg-amber-100 p-2 rounded font-mono text-[10px] text-slate-800">
+                            allow read, write: if true;
+                        </div>
                     </div>
+
                     <div class="flex gap-2 pt-2">
-                        <button type="button" onclick="toggleSheetsConfigModal()" class="flex-1 py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition">
-                            Cancelar
+                        <button type="button" onclick="toggleFirebaseConfigModal()" class="flex-1 py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition">
+                            Fechar
                         </button>
-                        <button type="button" onclick="saveGoogleSheetsConfig()" class="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md transition flex items-center justify-center gap-1.5">
+                        <button type="button" onclick="saveFirebaseConfig()" class="flex-1 py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-md transition flex items-center justify-center gap-1.5">
                             <i class="fa-solid fa-check"></i> Salvar e Conectar
                         </button>
                     </div>
@@ -2331,14 +2357,26 @@
         }
 
         // =========================================================================
-        // INTEGRAÇÃO COM GOOGLE PLANILHAS (GOOGLE SHEETS) & LOCALSTORAGE
+        // INTEGRAÇÃO COM BANCO DE DADOS FIREBASE FIRESTORE & TEMPO REAL
         // =========================================================================
         const STORAGE_KEY_CHECKINS = 'fastcheckin_records_v1';
-        const STORAGE_KEY_SHEETS_URL = 'fastcheckin_sheets_url';
+        const STORAGE_KEY_FIREBASE_CONFIG = 'fastcheckin_firebase_config_v1';
 
-        // URL oficial padrão da Planilha Google (Apps Script Web App)
-        // Quando preenchida aqui, TODOS os celulares de hóspedes enviam automaticamente!
-        const DEFAULT_GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbx6KlqW9YmUkQSGprbHhbQsOteLb1nMSG630UOUj1dIpqCq_0QEcErqPmLoowu6tBx4ZQ/exec';
+        // Objeto padrão de configuração do Firebase Firestore.
+        // As credenciais podem ser inseridas aqui diretamente no código OU configuradas dinamicamente
+        // pelo Painel da Recepção ("Configurar Chaves do Firebase"), ficando salvas com segurança no navegador.
+        const DEFAULT_FIREBASE_CONFIG = {
+            apiKey: "AIzaSyA-iRzYSTDtjPsebuRs1zcbfLW1DcwQWnY",
+            authDomain: "hoteis-checkin-online.firebaseapp.com",
+            projectId: "hoteis-checkin-online",
+            storageBucket: "hoteis-checkin-online.firebasestorage.app",
+            messagingSenderId: "140143799081",
+            appId: "1:140143799081:web:385fce860e591f4d012538"
+        };
+
+        let firebaseAppInstance = null;
+        let firebaseDb = null;
+        let firebaseUnsubscribe = null;
 
         function cleanTime(timeStr) {
             if (!timeStr) return '00:00';
@@ -2346,10 +2384,25 @@
             return m ? m[1] : String(timeStr).substring(0, 5);
         }
 
-        function getGoogleSheetsApiUrl() {
-            const custom = (localStorage.getItem(STORAGE_KEY_SHEETS_URL) || '').trim();
-            if (custom) return custom;
-            return (typeof DEFAULT_GOOGLE_SHEETS_URL !== 'undefined' ? DEFAULT_GOOGLE_SHEETS_URL : '').trim();
+        // Recupera a configuração do Firebase (do localStorage ou do default em código)
+        function getFirebaseConfig() {
+            try {
+                const stored = localStorage.getItem(STORAGE_KEY_FIREBASE_CONFIG);
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    if (parsed && (parsed.projectId || parsed.apiKey)) {
+                        return parsed;
+                    }
+                }
+            } catch (e) {
+                console.warn('Erro ao ler configuração do Firebase do localStorage:', e);
+            }
+
+            if (DEFAULT_FIREBASE_CONFIG && (DEFAULT_FIREBASE_CONFIG.projectId || DEFAULT_FIREBASE_CONFIG.apiKey)) {
+                return DEFAULT_FIREBASE_CONFIG;
+            }
+
+            return null;
         }
 
         function saveCheckinsToLocalStorage() {
@@ -2374,174 +2427,250 @@
             }
         }
 
-        // Envia o novo registro assincronamente para a Planilha do Google
-        async function sendCheckinToGoogleSheets(record) {
-            const apiUrl = getGoogleSheetsApiUrl();
-            if (!apiUrl) {
-                console.warn('Nenhuma URL do Google Sheets configurada. Check-in salvo apenas localmente no aparelho.');
+        // Inicializa o Firebase e o Firestore
+        function initFirebase() {
+            const config = getFirebaseConfig();
+            const statusText = document.getElementById('firebase-status-text');
+            const pulseDot = document.getElementById('firebase-pulse-dot');
+
+            if (!config || (!config.projectId && !config.apiKey)) {
+                if (statusText) {
+                    statusText.innerHTML = '<span class="text-amber-300 font-semibold">Firebase não configurado. Clique em "Configurar Chaves do Firebase" para conectar.</span>';
+                }
+                if (pulseDot) {
+                    pulseDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400';
+                }
+                return false;
+            }
+
+            if (typeof firebase === 'undefined') {
+                console.warn('SDK do Firebase não foi carregado.');
+                if (statusText) {
+                    statusText.innerHTML = '<span class="text-rose-300 font-semibold">Erro: SDK do Firebase não carregado via CDN.</span>';
+                }
                 return false;
             }
 
             try {
-                // Envia como text/plain com mode no-cors para evitar bloqueios de CORS em qualquer navegador/celular
-                await fetch(apiUrl, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    cache: 'no-cache',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(record)
-                });
-                console.log('Check-in enviado com sucesso para a Planilha Google!');
+                if (!firebase.apps.length) {
+                    firebaseAppInstance = firebase.initializeApp(config);
+                } else {
+                    firebaseAppInstance = firebase.app();
+                }
+                firebaseDb = firebase.firestore();
+
+                const proj = config.projectId || 'Ativo';
+                if (statusText) {
+                    statusText.innerHTML = `<span class="text-emerald-300 font-bold"><i class="fa-solid fa-circle-check"></i> Conectado:</span> Projeto <strong>${proj}</strong> ativo em tempo real.`;
+                }
+                if (pulseDot) {
+                    pulseDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse';
+                }
+
+                // Inicia escuta em tempo real no Firestore
+                listenCheckinsRealtime();
                 return true;
             } catch (err) {
-                console.warn('Erro ao enviar para Google Sheets:', err);
+                console.error('Erro ao inicializar Firebase:', err);
+                if (statusText) {
+                    statusText.innerHTML = `<span class="text-rose-300 font-semibold"><i class="fa-solid fa-triangle-exclamation"></i> Falha ao inicializar Firebase:</span> ${err.message}`;
+                }
+                if (pulseDot) {
+                    pulseDot.className = 'w-2.5 h-2.5 rounded-full bg-rose-500';
+                }
                 return false;
             }
         }
 
-        // Sincroniza a tabela da Recepção com as linhas da Planilha Google
-        async function syncCheckinsFromGoogleSheets(isBackground = false) {
-            const apiUrl = getGoogleSheetsApiUrl();
-            const statusText = document.getElementById('sheets-status-text');
-            const syncBtn = document.getElementById('btn-sync-sheets');
-
-            if (!apiUrl) {
-                if (statusText) statusText.innerHTML = '<span class="text-amber-300 font-semibold">Planilha não configurada. Clique em "Configurar Link da Planilha" para conectar seu Google Drive.</span>';
-                if (!isBackground) toggleSheetsConfigModal();
-                return;
+        // Envia o novo registro assincronamente para o Firebase Firestore
+        async function sendCheckinToFirebase(record) {
+            if (!firebaseDb) {
+                const ok = initFirebase();
+                if (!ok || !firebaseDb) {
+                    console.warn('Firebase não configurado. Check-in salvo apenas localmente no aparelho.');
+                    return false;
+                }
             }
 
-            if (syncBtn && !isBackground) {
-                syncBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Sincronizando...';
+            try {
+                // Grava o documento na coleção 'checkins' usando o ID do protocolo como chave primária
+                await firebaseDb.collection('checkins').doc(record.id).set({
+                    ...record,
+                    createdServerAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                console.log('Check-in enviado com sucesso para o Firebase Firestore!', record.id);
+                return true;
+            } catch (err) {
+                console.error('Erro ao enviar para Firebase Firestore:', err);
+                return false;
+            }
+        }
+
+        // Escuta os check-ins no Firebase Firestore em tempo real (onSnapshot)
+        function listenCheckinsRealtime() {
+            if (!firebaseDb) return;
+            if (firebaseUnsubscribe) {
+                firebaseUnsubscribe();
+                firebaseUnsubscribe = null;
+            }
+
+            const statusText = document.getElementById('firebase-status-text');
+
+            try {
+                firebaseUnsubscribe = firebaseDb.collection('checkins')
+                    .onSnapshot((snapshot) => {
+                        const loaded = [];
+                        snapshot.forEach((doc) => {
+                            const data = doc.data();
+                            loaded.push({
+                                id: data.id || doc.id,
+                                date: normalizeToIsoDate(data.date),
+                                time: cleanTime(data.time),
+                                hotel: data.hotel || 'hit',
+                                originType: data.originType || 'BR',
+                                name: data.name || '',
+                                dob: normalizeToIsoDate(data.dob, '1990'),
+                                phone: data.phone || '',
+                                email: data.email || '',
+                                nationality: data.nationality || 'BRASILEIRA',
+                                cpf: data.cpf || '',
+                                passport: data.passport || '',
+                                cep: data.cep || '',
+                                uf: data.uf || '',
+                                city: data.city || '',
+                                country: data.country || 'BRASIL',
+                                address: data.address || '',
+                                channel: data.channel || 'Balcão / Direto',
+                                purpose: data.purpose || 'Lazer / Férias',
+                                guestsCount: data.guestsCount || 1
+                            });
+                        });
+
+                        if (loaded.length > 0) {
+                            // Ordena decrescente por data e hora para os mais novos ficarem no topo
+                            loaded.sort((a, b) => {
+                                const dtA = (a.date || '') + ' ' + (a.time || '');
+                                const dtB = (b.date || '') + ' ' + (b.time || '');
+                                return dtB.localeCompare(dtA);
+                            });
+
+                            checkinsData = loaded;
+                            saveCheckinsToLocalStorage();
+                            const badge = document.getElementById('badge-total-checkins');
+                            if (badge) badge.textContent = checkinsData.length;
+                            renderAdminDashboard();
+
+                            if (statusText) {
+                                const config = getFirebaseConfig() || {};
+                                const proj = config.projectId || 'Firestore';
+                                statusText.innerHTML = `<span class="text-emerald-300 font-bold"><i class="fa-solid fa-bolt"></i> Ao vivo:</span> ${loaded.length} check-in(s) sincronizados do Firebase (${proj}).`;
+                            }
+                        }
+                    }, (err) => {
+                        console.error('Erro no listener em tempo real do Firestore:', err);
+                        if (statusText) {
+                            statusText.innerHTML = `<span class="text-rose-300 font-semibold"><i class="fa-solid fa-lock"></i> Permissão no Firestore:</span> ${err.message}. Verifique a aba Regras (Rules) no Firebase Console.`;
+                        }
+                    });
+            } catch (e) {
+                console.error('Falha ao registrar listener no Firestore:', e);
+            }
+        }
+
+        // Recarregamento manual ao clicar em "Recarregar Dados"
+        async function syncCheckinsFromFirebase() {
+            const syncBtn = document.getElementById('btn-sync-firebase');
+            if (syncBtn) {
+                syncBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Atualizando...';
                 syncBtn.disabled = true;
             }
 
-            try {
-                const res = await fetch(apiUrl, { cache: 'no-store' });
-                const text = await res.text();
+            if (!firebaseDb) {
+                initFirebase();
+            }
 
-                if (text.includes('accounts.google.com') || text.includes('Sign in') || text.includes('ServiceLogin')) {
-                    if (statusText) {
-                        statusText.innerHTML = '<span class="text-rose-300 font-bold"><i class="fa-solid fa-lock"></i> Permissão necessária:</span> No Apps Script, configure "Quem tem acesso" para "Qualquer pessoa" (Anyone).';
-                    }
-                    return;
-                }
-
-                let data;
+            if (firebaseDb) {
                 try {
-                    data = JSON.parse(text);
-                } catch(e) {
-                    console.warn('Resposta não é JSON válido:', text);
-                    if (statusText) statusText.innerHTML = '<span class="text-rose-300 font-semibold">A URL da planilha não retornou JSON. Verifique se copiou todo o código do Apps Script.</span>';
-                    return;
-                }
-
-                if (data && data.status === 'success' && Array.isArray(data.checkins)) {
-                    // Mescla os registros da planilha com os locais evitando duplicatas por ID
-                    const existingIds = new Set(checkinsData.map(c => c.id));
-                    let newItemsCount = 0;
-                    data.checkins.forEach(item => {
-                        item.date = normalizeToIsoDate(item.date);
-                        item.dob = normalizeToIsoDate(item.dob, '1990');
-                        item.time = cleanTime(item.time);
-                        if (!existingIds.has(item.id)) {
-                            checkinsData.unshift(item);
-                            existingIds.add(item.id);
-                            newItemsCount++;
-                        }
+                    const snapshot = await firebaseDb.collection('checkins').get();
+                    const loaded = [];
+                    snapshot.forEach((doc) => {
+                        const data = doc.data();
+                        loaded.push({
+                            ...data,
+                            id: data.id || doc.id,
+                            date: normalizeToIsoDate(data.date),
+                            dob: normalizeToIsoDate(data.dob, '1990'),
+                            time: cleanTime(data.time)
+                        });
                     });
 
-                    saveCheckinsToLocalStorage();
-                    renderAdminDashboard();
+                    if (loaded.length > 0) {
+                        loaded.sort((a, b) => ((b.date || '') + ' ' + (b.time || '')).localeCompare((a.date || '') + ' ' + (a.time || '')));
+                        checkinsData = loaded;
+                        saveCheckinsToLocalStorage();
+                        const badge = document.getElementById('badge-total-checkins');
+                        if (badge) badge.textContent = checkinsData.length;
+                        renderAdminDashboard();
+                    }
+                } catch (err) {
+                    console.warn('Erro ao buscar dados do Firebase:', err);
+                }
+            }
 
-                    if (statusText) {
-                        statusText.innerHTML = `<span class="text-emerald-300 font-bold"><i class="fa-solid fa-circle-check"></i> Sincronizado em tempo real:</span> ${data.checkins.length} check-in(s) carregados da Planilha Google.`;
-                    }
-                } else {
-                    if (statusText) {
-                        statusText.innerHTML = '<span class="text-amber-300">A planilha respondeu, mas não retornou registros válidos.</span>';
-                    }
-                }
-            } catch (err) {
-                console.warn('Erro ao sincronizar com Google Sheets:', err);
-                if (statusText && !isBackground) {
-                    statusText.innerHTML = '<span class="text-rose-300 font-semibold"><i class="fa-solid fa-triangle-exclamation"></i> Falha ao conectar na planilha. Verifique a URL do Web App.</span>';
-                }
-            } finally {
-                if (syncBtn && !isBackground) {
-                    syncBtn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Sincronizar com a Planilha';
+            setTimeout(() => {
+                if (syncBtn) {
+                    syncBtn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Recarregar Dados';
                     syncBtn.disabled = false;
                 }
-            }
+            }, 500);
         }
 
-        // Teste de conexão direto no modal
-        async function testGoogleSheetsConnection() {
-            const input = document.getElementById('sheets-api-url-input');
-            const testResult = document.getElementById('sheets-test-result');
-            const url = (input ? input.value : '').trim();
+        // Parser inteligente de configuração (aceita JSON puro ou código JavaScript copiado do console)
+        function parseFirebaseConfigInput(rawText) {
+            if (!rawText || !rawText.trim()) return null;
+            const clean = rawText.trim();
 
-            if (!url) {
-                if (testResult) {
-                    testResult.className = 'p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs block';
-                    testResult.innerHTML = '⚠️ Por favor, cole a URL do Google Apps Script acima antes de testar.';
-                }
-                return;
-            }
-
-            if (testResult) {
-                testResult.className = 'p-3 bg-slate-100 border border-slate-300 rounded-xl text-slate-700 text-xs block';
-                testResult.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-teal-600 mr-1.5"></i> Testando comunicação com o Google Drive...';
-            }
-
+            // Caso seja JSON puro
             try {
-                const res = await fetch(url, { cache: 'no-store' });
-                const text = await res.text();
+                const parsed = JSON.parse(clean);
+                if (parsed && typeof parsed === 'object') return parsed;
+            } catch (e) {}
 
-                if (text.includes('accounts.google.com') || text.includes('Sign in') || text.includes('ServiceLogin')) {
-                    testResult.className = 'p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs block';
-                    testResult.innerHTML = '❌ <strong>Acesso Bloqueado pelo Google:</strong> No menu <em>Extensões > Apps Script > Implantar > Gerenciar implantações</em>, certifique-se de configurar <strong>"Quem tem acesso"</strong> para <strong>"Qualquer pessoa" (Anyone)</strong>.';
-                    return;
-                }
+            // Caso o usuário tenha colado: const firebaseConfig = { ... };
+            if (clean.includes('{') && clean.includes('}')) {
+                const start = clean.indexOf('{');
+                const end = clean.lastIndexOf('}');
+                const objStr = clean.substring(start, end + 1);
 
-                let data;
                 try {
-                    data = JSON.parse(text);
-                } catch(e) {
-                    testResult.className = 'p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs block';
-                    testResult.innerHTML = '❌ A URL respondeu, mas não retornou o formato esperado. Verifique se copiou todo o código do arquivo <code>google-sheets-script.js</code> para o Apps Script.';
-                    return;
-                }
+                    return JSON.parse(objStr);
+                } catch (e) {}
 
-                if (data && data.status === 'success') {
-                    testResult.className = 'p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs block';
-                    testResult.innerHTML = `✅ <strong>Conexão Perfeita!</strong> A planilha respondeu com sucesso. Total de check-ins registrados na planilha: <strong>${data.total || 0}</strong>.`;
+                try {
+                    // Executa de forma isolada para extrair o objeto JavaScript
+                    const fn = new Function('return (' + objStr + ')');
+                    const res = fn();
+                    if (res && typeof res === 'object') return res;
+                } catch (e) {
+                    console.warn('Falha no parse do objeto JavaScript:', e);
                 }
-            } catch(err) {
-                testResult.className = 'p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs block';
-                testResult.innerHTML = `❌ <strong>Falha na conexão:</strong> Não foi possível alcançar a URL informada (${err.message}). Certifique-se de que a implantação do Apps Script foi concluída.`;
             }
+
+            return null;
         }
 
-        let sheetsAutoSyncTimer = null;
-        function startSheetsAutoSync() {
-            if (sheetsAutoSyncTimer) clearInterval(sheetsAutoSyncTimer);
-            // Sincroniza periodicamente em segundo plano a cada 20 segundos
-            sheetsAutoSyncTimer = setInterval(() => {
-                if (isAdminAuthenticated) {
-                    syncCheckinsFromGoogleSheets(true);
-                }
-            }, 20000);
-        }
-
-        function toggleSheetsConfigModal() {
-            const modal = document.getElementById('sheets-config-modal');
-            const input = document.getElementById('sheets-api-url-input');
-            const testResult = document.getElementById('sheets-test-result');
+        // Abre ou fecha o modal de configuração do Firebase
+        function toggleFirebaseConfigModal() {
+            const modal = document.getElementById('firebase-config-modal');
+            const input = document.getElementById('firebase-config-input');
+            const testResult = document.getElementById('firebase-test-result');
             if (!modal) return;
 
             if (modal.classList.contains('hidden')) {
-                if (input) input.value = getGoogleSheetsApiUrl();
+                const currentCfg = getFirebaseConfig();
+                if (input && currentCfg) {
+                    input.value = JSON.stringify(currentCfg, null, 2);
+                }
                 if (testResult) testResult.classList.add('hidden');
                 modal.classList.remove('hidden');
                 modal.classList.add('flex');
@@ -2551,18 +2680,97 @@
             }
         }
 
-        function saveGoogleSheetsConfig() {
-            const input = document.getElementById('sheets-api-url-input');
-            const url = (input ? input.value : '').trim();
-            localStorage.setItem(STORAGE_KEY_SHEETS_URL, url);
-            toggleSheetsConfigModal();
+        // Limpa as chaves salvas localmente
+        function clearFirebaseConfig() {
+            if (confirm('Deseja remover as chaves do Firebase salvas neste navegador?')) {
+                localStorage.removeItem(STORAGE_KEY_FIREBASE_CONFIG);
+                const input = document.getElementById('firebase-config-input');
+                if (input) input.value = '';
+                const testResult = document.getElementById('firebase-test-result');
+                if (testResult) {
+                    testResult.className = 'p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs block';
+                    testResult.innerHTML = 'ℹ️ Chaves removidas do armazenamento local.';
+                }
+                if (firebaseUnsubscribe) {
+                    firebaseUnsubscribe();
+                    firebaseUnsubscribe = null;
+                }
+                initFirebase();
+            }
+        }
 
-            const statusText = document.getElementById('sheets-status-text');
-            if (url) {
-                if (statusText) statusText.innerHTML = '<span class="text-emerald-300 font-bold">Link salvo!</span> Conectando com a planilha...';
-                syncCheckinsFromGoogleSheets();
-            } else {
-                if (statusText) statusText.textContent = 'Nenhuma planilha vinculada no momento.';
+        // Salva a configuração no localStorage e reinicializa a conexão
+        function saveFirebaseConfig() {
+            const input = document.getElementById('firebase-config-input');
+            const raw = (input ? input.value : '').trim();
+
+            if (!raw) {
+                localStorage.removeItem(STORAGE_KEY_FIREBASE_CONFIG);
+                toggleFirebaseConfigModal();
+                initFirebase();
+                return;
+            }
+
+            const parsed = parseFirebaseConfigInput(raw);
+            if (!parsed || (!parsed.projectId && !parsed.apiKey)) {
+                alert('Formato de configuração inválido! Cole o bloco "const firebaseConfig = { ... }" ou o JSON gerado no Firebase Console.');
+                return;
+            }
+
+            localStorage.setItem(STORAGE_KEY_FIREBASE_CONFIG, JSON.stringify(parsed));
+            toggleFirebaseConfigModal();
+            initFirebase();
+        }
+
+        // Testa a conexão diretamente a partir do modal
+        async function testFirebaseConnection() {
+            const input = document.getElementById('firebase-config-input');
+            const testResult = document.getElementById('firebase-test-result');
+            const raw = (input ? input.value : '').trim();
+
+            if (!raw) {
+                if (testResult) {
+                    testResult.className = 'p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs block';
+                    testResult.innerHTML = '⚠️ Por favor, cole a configuração do Firebase acima antes de testar.';
+                }
+                return;
+            }
+
+            const parsed = parseFirebaseConfigInput(raw);
+            if (!parsed || (!parsed.projectId && !parsed.apiKey)) {
+                if (testResult) {
+                    testResult.className = 'p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs block';
+                    testResult.innerHTML = '❌ O formato colado não pôde ser lido. Certifique-se de copiar as chaves <code>apiKey</code> e <code>projectId</code>.';
+                }
+                return;
+            }
+
+            if (testResult) {
+                testResult.className = 'p-3 bg-slate-100 border border-slate-300 rounded-xl text-slate-700 text-xs block';
+                testResult.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-amber-500 mr-1.5"></i> Conectando ao Firebase Firestore...';
+            }
+
+            try {
+                // Cria app de teste temporário
+                const testAppName = 'test_app_' + Date.now();
+                const testApp = firebase.initializeApp(parsed, testAppName);
+                const testDb = testApp.firestore();
+
+                // Tenta consultar a coleção 'checkins'
+                const snapshot = await testDb.collection('checkins').limit(1).get();
+                testResult.className = 'p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs block';
+                testResult.innerHTML = `✅ <strong>Conexão Perfeita!</strong> O Firestore do projeto <strong>${parsed.projectId}</strong> respondeu com sucesso. Pronto para uso!`;
+
+                // Deleta app de teste
+                testApp.delete().catch(() => {});
+            } catch (err) {
+                console.error('Falha no teste do Firebase:', err);
+                testResult.className = 'p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs block';
+                let hint = '';
+                if (err.message && err.message.toLowerCase().includes('permission')) {
+                    hint = '<br><span class="text-amber-800">Dica: Lembre-se de liberar a regra na aba <strong>Firestore Database > Regras</strong>: <code>allow read, write: if true;</code></span>';
+                }
+                testResult.innerHTML = `❌ <strong>Falha na conexão:</strong> ${err.message}${hint}`;
             }
         }
 
@@ -2646,7 +2854,7 @@
             // Salva no topo da lista para aparecer imediatamente nos relatórios
             checkinsData.unshift(newRecord);
             saveCheckinsToLocalStorage();
-            sendCheckinToGoogleSheets(newRecord);
+            sendCheckinToFirebase(newRecord);
             document.getElementById('badge-total-checkins').textContent = checkinsData.length;
 
             // Mostra tela de sucesso (Voucher Digital)
@@ -3285,18 +3493,8 @@
             }
             applyBaseUrlToAll();
 
-            // Se já houver URL do Google Sheets salva, atualiza o status
-            const sheetsUrl = getGoogleSheetsApiUrl();
-            const statusText = document.getElementById('sheets-status-text');
-            if (sheetsUrl) {
-                if (statusText) statusText.innerHTML = '<span class="text-emerald-300 font-bold"><i class="fa-solid fa-circle-check"></i> Conectado:</span> Sincronizando com a planilha...';
-                syncCheckinsFromGoogleSheets();
-            } else {
-                if (statusText) statusText.innerHTML = '<span class="text-amber-300">Nenhuma planilha vinculada ainda. Clique em "Configurar Link da Planilha" para conectar.</span>';
-            }
-
-            // Inicia sincronização automática periódica (a cada 20 segundos)
-            startSheetsAutoSync();
+            // Inicializa conexão em tempo real com o Firebase Firestore
+            initFirebase();
         };
     </script>
 </body>
