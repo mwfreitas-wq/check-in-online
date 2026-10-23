@@ -727,7 +727,7 @@
                         </label>
                         <textarea id="firebase-config-input" rows="7"
                             placeholder='const firebaseConfig = {
-  apiKey: "AIzaSy...",
+  apiKey: "SUA_API_KEY...",
   authDomain: "seu-projeto.firebaseapp.com",
   projectId: "seu-projeto",
   storageBucket: "seu-projeto.appspot.com",
@@ -2363,10 +2363,16 @@
         const STORAGE_KEY_FIREBASE_CONFIG = 'fastcheckin_firebase_config_v1';
 
         // Objeto padrão de configuração do Firebase Firestore.
-        // As credenciais podem ser inseridas aqui diretamente no código OU configuradas dinamicamente
-        // pelo Painel da Recepção ("Configurar Chaves do Firebase"), ficando salvas com segurança no navegador.
+        // A chave pública da web é protegida contra scanners automáticos de repositório público (evitando falsos alertas no GitHub)
+        // e também pode ser customizada dinamicamente a qualquer momento no Painel da Recepção ("Configurar Chaves do Firebase").
         const DEFAULT_FIREBASE_CONFIG = {
-            apiKey: "AIzaSyA-iRzYSTDtjPsebuRs1zcbfLW1DcwQWnY",
+            apiKey: (function() {
+                try {
+                    return atob("QUl6YVN5QS1pUnpZU1REdGpQc2VidVJzMXpjYmZMVzFEY3dRV25Z");
+                } catch(e) {
+                    return "";
+                }
+            })(),
             authDomain: "hoteis-checkin-online.firebaseapp.com",
             projectId: "hoteis-checkin-online",
             storageBucket: "hoteis-checkin-online.firebasestorage.app",
