@@ -323,6 +323,20 @@
                                 </select>
                             </div>
 
+                            <!-- Campo dinâmico obrigatório: exibido se o hóspede escolher "OUTRO PAÍS" -->
+                            <div id="wrapper-custom-country" class="sm:col-span-6 hidden">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">
+                                    <span data-i18n="lbl_custom_country">Qual o seu País de Origem?</span> <span class="text-rose-600">*</span>
+                                </label>
+                                <div class="relative">
+                                    <i class="fa-solid fa-earth-americas absolute left-3.5 top-3 text-teal-600 text-sm"></i>
+                                    <input type="text" id="field-custom-country"
+                                        data-i18n-placeholder="ph_custom_country"
+                                        placeholder="Digite o nome do seu país (Ex: Austrália, Japão...)"
+                                        class="w-full pl-9 pr-3.5 py-2.5 bg-teal-50/40 border border-teal-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition uppercase font-semibold text-slate-800">
+                                </div>
+                            </div>
+
                             <!-- CPF (Obrigatório apenas para Brasileiros) -->
                             <div id="wrapper-cpf" class="sm:col-span-6">
                                 <label class="block text-xs font-semibold text-slate-700 mb-1">
@@ -1470,7 +1484,10 @@
                 success_subtitle: 'Seus dados já foram enviados para a recepção. Ao chegar no balcão, basta informar seu nome para retirar a chave.',
                 wifi_title: 'Wi-Fi Liberado na Chegada',
                 btn_new_checkin: 'Cadastrar Outro Hóspede / Acompanhante',
-                err_missing_fields: 'Por favor, preencha todos os campos obrigatórios destacados com (*) antes de confirmar.'
+                err_missing_fields: 'Por favor, preencha todos os campos obrigatórios destacados com (*) antes de confirmar.',
+                lbl_custom_country: 'Qual o seu País de Origem?',
+                ph_custom_country: 'Digite o nome do seu país (Ex: Austrália, Japão...)',
+                err_custom_country: 'Por favor, digite o nome do seu país de origem no campo obrigatório.'
             },
             es: {
                 select_lang_label: 'Seleccione el Idioma',
@@ -1514,7 +1531,10 @@
                 success_subtitle: 'Sus datos ya fueron enviados a la recepción del hotel. Al llegar, solo indique su nombre para recibir su llave.',
                 wifi_title: 'Wi-Fi Gratis Disponible',
                 btn_new_checkin: 'Registrar Otro Huésped / Acompañante',
-                err_missing_fields: 'Por favor complete todos los campos obligatorios marcados con (*) antes de continuar.'
+                err_missing_fields: 'Por favor complete todos los campos obligatorios marcados con (*) antes de continuar.',
+                lbl_custom_country: '¿Cuál es su País de Origen?',
+                ph_custom_country: 'Escriba el nombre de su país (Ej: Australia, Japón...)',
+                err_custom_country: 'Por favor, escriba el nombre de su país de origen en el campo obligatorio.'
             },
             en: {
                 select_lang_label: 'Choose Language',
@@ -1558,7 +1578,10 @@
                 success_subtitle: 'Your registration has been sent to our front desk. Upon arrival, simply give your name to pick up your key.',
                 wifi_title: 'Complimentary Hotel Wi-Fi',
                 btn_new_checkin: 'Register Another Guest',
-                err_missing_fields: 'Please fill out all required fields marked with (*) before submitting.'
+                err_missing_fields: 'Please fill out all required fields marked with (*) before submitting.',
+                lbl_custom_country: 'Country of Origin / Nationality',
+                ph_custom_country: 'Enter your country name (e.g., Australia, Japan...)',
+                err_custom_country: 'Please enter your country of origin in the required field.'
             },
             fr: {
                 select_lang_label: 'Choisir la Langue',
@@ -1602,7 +1625,10 @@
                 success_subtitle: 'Vos informations ont été transmises à la réception. À votre arrivée, indiquez simplement votre nom pour récupérer votre clé.',
                 wifi_title: 'Accès Wi-Fi Gratuit',
                 btn_new_checkin: 'Enregistrer un Autre Client',
-                err_missing_fields: 'Veuillez remplir tous les champs obligatoires marqués d’un (*) avant de valider.'
+                err_missing_fields: 'Veuillez remplir tous les champs obligatoires marqués d’un (*) avant de valider.',
+                lbl_custom_country: 'Pays d’Origine / Nationalité',
+                ph_custom_country: 'Entrez le nom de votre pays (Ex : Australie, Japon...)',
+                err_custom_country: 'Veuillez entrer le nom de votre pays d’origine dans le champ obligatoire.'
             }
         };
 
@@ -2269,6 +2295,8 @@
             const sectionBrAddress = document.getElementById('section-br-address');
             const stepNumExtra = document.getElementById('step-num-extra');
             const natSelect = document.getElementById('field-nationality');
+            const customCountryWrapper = document.getElementById('wrapper-custom-country');
+            const customCountryInput = document.getElementById('field-custom-country');
 
             if (type === 'BR') {
                 // Visual do Seletor
@@ -2283,6 +2311,9 @@
                 sectionBrAddress.classList.remove('hidden');
                 stepNumExtra.textContent = '4';
                 natSelect.value = 'BRASIL';
+
+                if (customCountryWrapper) customCountryWrapper.classList.add('hidden');
+                if (customCountryInput) customCountryInput.value = '';
             } else {
                 // Visual do Seletor Estrangeiro
                 btnInt.className = 'flex items-center gap-3.5 p-3.5 rounded-xl border-2 border-teal-600 bg-teal-50/60 text-left transition shadow-sm';
@@ -2298,11 +2329,31 @@
                 if (natSelect.value === 'BRASIL') {
                     natSelect.value = 'ARGENTINA';
                 }
+
+                if (natSelect.value === 'OUTRO') {
+                    if (customCountryWrapper) customCountryWrapper.classList.remove('hidden');
+                } else {
+                    if (customCountryWrapper) customCountryWrapper.classList.add('hidden');
+                    if (customCountryInput) customCountryInput.value = '';
+                }
             }
             document.getElementById('form-error-box').classList.add('hidden');
         }
 
         function handleNationalityChange(val) {
+            const customCountryWrapper = document.getElementById('wrapper-custom-country');
+            const customCountryInput = document.getElementById('field-custom-country');
+
+            if (val === 'OUTRO') {
+                if (customCountryWrapper) customCountryWrapper.classList.remove('hidden');
+                if (customCountryInput) {
+                    setTimeout(() => customCountryInput.focus(), 100);
+                }
+            } else {
+                if (customCountryWrapper) customCountryWrapper.classList.add('hidden');
+                if (customCountryInput) customCountryInput.value = '';
+            }
+
             if (val === 'BRASIL' && currentOriginType !== 'BR') {
                 setGuestOriginType('BR');
             } else if (val !== 'BRASIL' && currentOriginType === 'BR') {
@@ -2793,7 +2844,9 @@
             const dob = document.getElementById('field-dob').value;
             const phone = document.getElementById('field-phone').value.trim();
             const email = document.getElementById('field-email').value.trim().toLowerCase();
-            const nationality = document.getElementById('field-nationality').value;
+            let nationality = document.getElementById('field-nationality').value;
+            const customCountryInput = document.getElementById('field-custom-country');
+            const customCountry = customCountryInput ? customCountryInput.value.trim().toUpperCase() : '';
             const cpf = document.getElementById('field-cpf').value.trim();
             const passport = document.getElementById('field-passport').value.trim().toUpperCase();
             const cep = document.getElementById('field-cep').value.trim();
@@ -2804,6 +2857,17 @@
             const channel = document.getElementById('field-channel').value;
             const purpose = document.getElementById('field-purpose').value;
             const guestsCount = parseInt(document.getElementById('field-guests-count').value, 10) || 1;
+
+            // Validação Específica para "OUTRO PAÍS" selecionado: campo digitado é obrigatório
+            if (nationality === 'OUTRO') {
+                if (!customCountry) {
+                    errorText.textContent = I18N[currentLang].err_custom_country || 'Por favor, digite o nome do seu país de origem no campo obrigatório.';
+                    errorBox.classList.remove('hidden');
+                    if (customCountryInput) customCountryInput.focus();
+                    return;
+                }
+                nationality = customCountry;
+            }
 
             // Validação Comum (Nome, Data de Nascimento, Telefone, E-mail, Nacionalidade)
             if (!name || !dob || !phone || !email || !nationality) {
@@ -2880,6 +2944,10 @@
 
         function resetCheckinForm() {
             document.getElementById('guestCheckinForm').reset();
+            const customCountryWrapper = document.getElementById('wrapper-custom-country');
+            const customCountryInput = document.getElementById('field-custom-country');
+            if (customCountryWrapper) customCountryWrapper.classList.add('hidden');
+            if (customCountryInput) customCountryInput.value = '';
             clearSignature();
             setGuestOriginType('BR');
             document.getElementById('checkin-success-container').classList.add('hidden');
